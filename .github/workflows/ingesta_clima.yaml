@@ -26,7 +26,7 @@ jobs:
       - name: Ejecutar script de ingesta
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AEMET_API_KEY: ${{ secrets.AEMET_API_KEY }}
           PUERTOS_API_KEY: ${{ secrets.PUERTOS_API_KEY }}
         run: |
