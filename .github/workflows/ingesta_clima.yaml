@@ -2,8 +2,8 @@ name: Ingesta de clima
 
 on:
   schedule:
-    - cron: "0 * * * *"     # Cada hora
-  workflow_dispatch:         # Permite ejecutarlo manualmente
+    - cron: "0 * * * *" # Cada hora
+  workflow_dispatch: # Permite ejecutarlo manualmente
 
 jobs:
   ingesta:
