@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-import supabase as supabase
+import supabase as supabase_
 import requests
 import os
 
