@@ -5,7 +5,7 @@ import os
 
 # --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Funciones auxiliares ---
@@ -78,7 +78,7 @@ def ingestar_datos():
     if registros_totales:
         try:
             print(f"Subiendo {len(registros_totales)} registros meteorológicos a Supabase...")
-            supabase.table("condiciones_meteorologicas").upsert(
+            supabase.table("clima").upsert(
                 registros_totales,
                 on_conflict="spot_id,fecha_hora"
             ).execute()
