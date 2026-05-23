@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
-import supabase as supabase_
+from supabase import create_client
 import requests
 import os
 
 # --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase = supabase_.create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Funciones auxiliares ---
 def obtener_spots_desde_supabase():
