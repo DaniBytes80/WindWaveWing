@@ -49,6 +49,9 @@ def ingestar_datos():
         print("No se encontraron spots en la tabla.")
         return
 
+    # ⭐ LIMITACIÓN TEMPORAL PARA DESARROLLO
+    spots = spots[:2]   # <--- SOLO 2 SPOTS PARA QUE TARDE POQUÍSIMO
+
     registros_totales = []
 
     for spot in spots:
@@ -60,8 +63,8 @@ def ingestar_datos():
             print(f"⚠ Spot sin coordenadas válidas: {nombre}. Saltando.")
             continue
 
-        lng = geo["coordinates"][1]   # OJO: tu JSON está invertido
         lat = geo["coordinates"][0]
+        lng = geo["coordinates"][1]
 
         print(f"-> Procesando spot: {nombre} ({lat}, {lng})")
 
@@ -74,7 +77,6 @@ def ingestar_datos():
 
         hourly_met = datos_met["hourly"]
 
-        # Detectar si NO hay datos marítimos
         sin_mar = (
             not datos_mar or
             "hourly" not in datos_mar or
