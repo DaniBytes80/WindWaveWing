@@ -1,17 +1,15 @@
 from datetime import datetime, timezone
-from dotenv import load_dotenv
-from supabase import create_client, Client # Asegúrate de importar Client
+from supabase import create_client
 import requests
 import os
 
-# Cargar variables de entorno
-load_dotenv()
 
-# --- Conexión a Supabase (sin configuraciones de auth) ---
+# --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+# --- Funciones auxiliares ---
 def obtener_spots_desde_supabase():
     try:
         respuesta = supabase.table("spots").select("*").execute()
@@ -32,7 +30,6 @@ def consultar_api_maritima(lat, lng):
     except Exception as e:
         print("Error consultando API marítima:", e)
         return None
-
 
 # --- Proceso principal ---
 def ingestar_datos():
@@ -82,17 +79,13 @@ def ingestar_datos():
     if registros_totales:
         try:
             print(f"Subiendo {len(registros_totales)} registros meteorológicos a Supabase...")
-            # Usa upsert con on_conflict como string separado por comas
             supabase.table("clima").upsert(
                 registros_totales,
-                on_conflict="spot_id,fecha_hora"  # Como string, no lista
+                on_conflict="spot_id,fecha_hora"
             ).execute()
             print("¡Ingesta completada con éxito!")
         except Exception as e:
             print("Error al guardar datos en Supabase:", e)
-            # Imprime el error detallado
-            import traceback
-            traceback.print_exc()
 
 if __name__ == "__main__":
-    ingestar_datos()   
+    ingestar_datos()
