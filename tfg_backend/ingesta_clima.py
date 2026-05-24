@@ -58,8 +58,9 @@ def ingestar_datos():
     for spot in spots:
         spot_id = spot["id"]
         nombre = spot["nombre"]
-        lat = spot["lat"]
-        lng = spot["lng"]
+        coords = spot["point"]["coordinates"]
+        lng = coords[0]
+        lat = coords[1]
 
         print(f"-> Procesando datos para el spot: {nombre} ({lat}, {lng})")
 
