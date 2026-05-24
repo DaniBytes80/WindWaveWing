@@ -1,101 +1,125 @@
-import re  # Asegúrate de añadir este import al principio del archivo
+from datetime import datetime, timezone
+from supabase import create_client
+import requests
+import os
+import json
 
+# --- Conexión a Supabase ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+# --- Funciones auxiliares ---
+def obtener_spots_desde_supabase():
+    try:
+        # Usamos la VIEW que devuelve GeoJSON
+        respuesta = supabase.table("spot_geojson").select("*").execute()
+        return respuesta.data
+    except Exception as e:
+        print("Error obteniendo spots:", e)
+        return []
+
+def consultar_api_maritima(lat, lng):
+    url = (
+        "https://marine-api.open-meteo.com/v1/marine?"
+        f"latitude={lat}&longitude={lng}&hourly=wave_height,wave_direction,wave_period,"
+        "wind_speed_10m,wind_direction_10m"
+    )
+    try:
+        respuesta = requests.get(url)
+        return respuesta.json()
+    except Exception as e:
+        print("Error consultando API marítima:", e)
+        return None
+
+def consultar_api_meteorologica(lat, lng):
+    url = (
+        "https://api.open-meteo.com/v1/forecast?"
+        f"latitude={lat}&longitude={lng}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability"
+    )
+    try:
+        respuesta = requests.get(url)
+        return respuesta.json()
+    except Exception as e:
+        print("Error consultando API meteorológica:", e)
+        return None
+
+# --- Proceso principal ---
 def ingestar_datos():
-    print(f"[{datetime.now(timezone.utc)}] Iniciando proceso de ingesta...")
+    print(f"[{datetime.now()}] Iniciando proceso de ingesta...")
 
     spots = obtener_spots_desde_supabase()
-    if not spots:
-        print("No se encontraron registros en la tabla 'spot'.")
-        return
+    print("Spots encontrados:", spots)
 
-    # Mapeo en memoria para control de duplicados (Soporta el id UUID)
-    try:
-        clima_existente = supabase.table("clima").select("id", "spot_id", "fecha_hora").data
-        mapa_ids = {
-            (reg["spot_id"], datetime.fromisoformat(reg["fecha_hora"]).replace(tzinfo=timezone.utc)): reg["id"] 
-            for reg in clima_existente
-        }
-    except Exception as e:
-        print("Historial de clima vacío o inaccesible (se asumen nuevas inserciones).")
-        mapa_ids = {}
+    if not spots:
+        print("No se encontraron spots en la tabla.")
+        return
 
     registros_totales = []
 
     for spot in spots:
         spot_id = spot["id"]
         nombre = spot["nombre"]
-        point_data = spot.get("point")
 
-        if not point_data:
-            print(f"⚠️ El spot {nombre} no tiene datos geográficos en la columna 'point'. Saltando...")
-            continue
+        # --- EXTRAER LAT/LNG DESDE GEOJSON ---
+        geo = spot["point"]  # ya es JSON gracias a la VIEW
+        lng = geo["coordinates"][0]
+        lat = geo["coordinates"][1]
 
-        # --- PARSER INTELIGENTE DE GEOGRAPHY (WKT VS GEOJSON) ---
-        try:
-            if isinstance(point_data, str):
-                # Si Supabase nos devuelve el formato WKT: "POINT(-5.6042 36.0142)"
-                # Extraemos los números flotantes con una expresión regular
-                match = re.match(r"POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)", point_data, re.IGNORECASE)
-                if match:
-                    lng = float(match.group(1))
-                    lat = float(match.group(2))
-                else:
-                    raise ValueError("Formato WKT inválido")
-            elif isinstance(point_data, dict) and "coordinates" in point_data:
-                # Si en algún entorno devuelve estructura GeoJSON
-                lng = float(point_data["coordinates"][0])
-                lat = float(point_data["coordinates"][1])
-            else:
-                print(f"⚠️ Formato geográfico no reconocido para el spot {nombre}. Saltando...")
-                continue
-        except Exception as err:
-            print(f"❌ Error al parsear coordenadas del spot {nombre}: {err}")
-            continue
-
-        print(f"-> Procesando datos meteorológicos para: {nombre} ({lat}, {lng})")
+        print(f"-> Procesando datos para el spot: {nombre} ({lat}, {lng})")
 
         datos_mar = consultar_api_maritima(lat, lng)
         datos_met = consultar_api_meteorologica(lat, lng)
 
-        if not datos_mar or not datos_met or "hourly" not in datos_met or "hourly" not in datos_mar:
-            print(f"⚠️ Error de respuesta de APIs externas para el spot {nombre}.")
+        print("API Marítima:", datos_mar)
+        print("API Meteorológica:", datos_met)
+
+        if not datos_mar or "hourly" not in datos_mar:
+            print(f"   No se pudieron obtener datos marítimos para {nombre}")
             continue
 
-        hourly_met = datos_met["hourly"]
-        hourly_mar = datos_mar["hourly"]
-        horas = hourly_met["time"]
+        if not datos_met or "hourly" not in datos_met:
+            print(f"   No se pudieron obtener datos meteorológicos para {nombre}")
+            continue
 
-        for i, hora_str in enumerate(horas):
-            dt_objeto = datetime.fromisoformat(hora_str).replace(tzinfo=timezone.utc)
-            fecha_iso = dt_objeto.isoformat()
+        hourly_mar = datos_mar["hourly"]
+        hourly_met = datos_met["hourly"]
+
+        tiempos = hourly_mar["time"]
+
+        for i in range(len(tiempos)):
+            fecha_iso = datetime.fromisoformat(tiempos[i]).astimezone(timezone.utc).isoformat()
 
             registro = {
                 "spot_id": spot_id,
                 "fecha_hora": fecha_iso,
-                "temperature": hourly_met["temperature_2m"][i],
-                "humidity": hourly_met["relative_humidity_2m"][i],
-                "precipitation_probability": hourly_met["precipitation_probability"][i],
-                "wind_speed": hourly_mar["wind_speed_10m"][i],
-                "wind_direction": hourly_mar["wind_direction_10m"][i],
-                "wave_height": hourly_mar["wave_height"][i],
-                "wave_period": hourly_mar["wave_period"][i],
-                "wave_direction": hourly_mar["wave_direction"][i]
+                "velocidad_viento": hourly_mar["wind_speed_10m"][i],
+                "direccion_viento": f"{hourly_mar['wind_direction_10m'][i]}°",
+                "racha_viento": hourly_mar["wind_speed_10m"][i] * 1.3,
+                "altura_ola": hourly_mar["wave_height"][i],
+                "periodo_ola": hourly_mar["wave_period"][i],
+                "direccion_ola": f"{hourly_mar['wave_direction'][i]}°",
+                "temperatura": hourly_met["temperature_2m"][i],
+                "humedad": hourly_met["relative_humidity_2m"][i],
+                "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
             }
-
-            clave_busqueda = (spot_id, dt_objeto)
-            if clave_busqueda in mapa_ids:
-                registro["id"] = mapa_ids[clave_busqueda]
 
             registros_totales.append(registro)
 
-    # Inserción Masiva con actualización sucesiva
+    print("Registros generados:", len(registros_totales))
+
     if registros_totales:
-        print(f"Enviando {len(registros_totales)} registros a la tabla 'clima'...")
         try:
-            respuesta = supabase.table("clima").upsert(registros_totales).data
-            print("¡Sincronización masiva completada con éxito en Supabase!")
-            return respuesta
+            print(f"Subiendo {len(registros_totales)} registros a Supabase...")
+
+            supabase.table("clima").upsert(
+                registros_totales,
+                on_conflict="spot_id,fecha_hora"
+            ).execute()
+
+            print("¡Ingesta completada con éxito!")
         except Exception as e:
-            print("Error en la transacción con Supabase:", e)
-    else:
-        print("No se generaron registros válidos para insertar.")
+            print("Error al guardar datos en Supabase:", e)
+
+if __name__ == "__main__":
+    ingestar_datos()
