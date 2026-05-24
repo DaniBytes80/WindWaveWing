@@ -3,7 +3,6 @@ from supabase import create_client
 import requests
 import os
 
-
 # --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -31,11 +30,25 @@ def consultar_api_maritima(lat, lng):
         print("Error consultando API marítima:", e)
         return None
 
+def consultar_api_meteorologica(lat, lng):
+    url = (
+        "https://api.open-meteo.com/v1/forecast?"
+        f"latitude={lat}&longitude={lng}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability"
+    )
+    try:
+        respuesta = requests.get(url)
+        return respuesta.json()
+    except Exception as e:
+        print("Error consultando API meteorológica:", e)
+        return None
+
 # --- Proceso principal ---
 def ingestar_datos():
-    print(f"[{datetime.now()}] Iniciando proceso de ingesta de Capa 1 a Capa 2...")
+    print(f"[{datetime.now()}] Iniciando proceso de ingesta...")
 
     spots = obtener_spots_desde_supabase()
+    print("Spots encontrados:", spots)
+
     if not spots:
         print("No se encontraron spots en la tabla.")
         return
@@ -50,14 +63,24 @@ def ingestar_datos():
 
         print(f"-> Procesando datos para el spot: {nombre} ({lat}, {lng})")
 
-        datos_clima = consultar_api_maritima(lat, lng)
+        datos_mar = consultar_api_maritima(lat, lng)
+        datos_met = consultar_api_meteorologica(lat, lng)
 
-        if not datos_clima or "hourly" not in datos_clima:
-            print(f"   No se pudieron obtener datos para {nombre}")
+        print("API Marítima:", datos_mar)
+        print("API Meteorológica:", datos_met)
+
+        if not datos_mar or "hourly" not in datos_mar:
+            print(f"   No se pudieron obtener datos marítimos para {nombre}")
             continue
 
-        hourly = datos_clima["hourly"]
-        tiempos = hourly["time"]
+        if not datos_met or "hourly" not in datos_met:
+            print(f"   No se pudieron obtener datos meteorológicos para {nombre}")
+            continue
+
+        hourly_mar = datos_mar["hourly"]
+        hourly_met = datos_met["hourly"]
+
+        tiempos = hourly_mar["time"]
 
         for i in range(len(tiempos)):
             fecha_iso = datetime.fromisoformat(tiempos[i]).astimezone(timezone.utc).isoformat()
@@ -65,24 +88,30 @@ def ingestar_datos():
             registro = {
                 "spot_id": spot_id,
                 "fecha_hora": fecha_iso,
-                "velocidad_viento": hourly["wind_speed_10m"][i],
-                "direccion_viento": f"{hourly['wind_direction_10m'][i]}°",
-                "racha_viento": hourly["wind_speed_10m"][i] * 1.3,
-                "altura_ola": hourly["wave_height"][i],
-                "periodo_ola": hourly["wave_period"][i],
-                "direccion_ola": f"{hourly['wave_direction'][i]}°",
-                "probabilidad_lluvia": 0.0,
+                "velocidad_viento": hourly_mar["wind_speed_10m"][i],
+                "direccion_viento": f"{hourly_mar['wind_direction_10m'][i]}°",
+                "racha_viento": hourly_mar["wind_speed_10m"][i] * 1.3,
+                "altura_ola": hourly_mar["wave_height"][i],
+                "periodo_ola": hourly_mar["wave_period"][i],
+                "direccion_ola": f"{hourly_mar['wave_direction'][i]}°",
+                "temperatura": hourly_met["temperature_2m"][i],
+                "humedad": hourly_met["relative_humidity_2m"][i],
+                "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
             }
 
             registros_totales.append(registro)
 
+    print("Registros generados:", len(registros_totales))
+
     if registros_totales:
         try:
-            print(f"Subiendo {len(registros_totales)} registros meteorológicos a Supabase...")
+            print(f"Subiendo {len(registros_totales)} registros a Supabase...")
+
             supabase.table("clima").upsert(
                 registros_totales,
                 on_conflict="spot_id,fecha_hora"
             ).execute()
+
             print("¡Ingesta completada con éxito!")
         except Exception as e:
             print("Error al guardar datos en Supabase:", e)
