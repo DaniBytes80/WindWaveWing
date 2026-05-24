@@ -11,7 +11,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # --- Funciones auxiliares ---
 def obtener_spots_desde_supabase():
     try:
-        respuesta = supabase.table("spots").select("*").execute()
+        respuesta = supabase.table("spot").select("*").execute()
         return respuesta.data
     except Exception as e:
         print("Error obteniendo spots:", e)
