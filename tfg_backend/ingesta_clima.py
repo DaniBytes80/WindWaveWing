@@ -12,7 +12,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # --- Funciones auxiliares ---
 def obtener_spots_desde_supabase():
     try:
-        # Usamos la VIEW que devuelve GeoJSON
         respuesta = supabase.table("spot_geojson").select("*").execute()
         return respuesta.data
     except Exception as e:
@@ -26,10 +25,8 @@ def consultar_api_maritima(lat, lng):
         "wind_speed_10m,wind_direction_10m"
     )
     try:
-        respuesta = requests.get(url)
-        return respuesta.json()
-    except Exception as e:
-        print("Error consultando API marítima:", e)
+        return requests.get(url).json()
+    except:
         return None
 
 def consultar_api_meteorologica(lat, lng):
@@ -38,10 +35,8 @@ def consultar_api_meteorologica(lat, lng):
         f"latitude={lat}&longitude={lng}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability"
     )
     try:
-        respuesta = requests.get(url)
-        return respuesta.json()
-    except Exception as e:
-        print("Error consultando API meteorológica:", e)
+        return requests.get(url).json()
+    except:
         return None
 
 # --- Proceso principal ---
@@ -61,60 +56,67 @@ def ingestar_datos():
         spot_id = spot["id"]
         nombre = spot["nombre"]
 
-        # --- EXTRAER LAT/LNG DESDE GEOJSON ---
-        geo = spot["point"]  # ya es JSON gracias a la VIEW
+        # --- Extraer coordenadas desde GeoJSON ---
+        geo = spot["point"]
         lng = geo["coordinates"][0]
         lat = geo["coordinates"][1]
 
-        print(f"-> Procesando datos para el spot: {nombre} ({lat}, {lng})")
+        print(f"-> Procesando spot: {nombre} ({lat}, {lng})")
 
         datos_mar = consultar_api_maritima(lat, lng)
         datos_met = consultar_api_meteorologica(lat, lng)
 
-        print("API Marítima:", datos_mar)
-        print("API Meteorológica:", datos_met)
-
-        if not datos_mar or "hourly" not in datos_mar:
-            print(f"   No se pudieron obtener datos marítimos para {nombre}")
-            continue
-
         if not datos_met or "hourly" not in datos_met:
-            print(f"   No se pudieron obtener datos meteorológicos para {nombre}")
+            print(f"   ⚠ No hay datos meteorológicos para {nombre}. Saltando spot.")
             continue
 
-        hourly_mar = datos_mar["hourly"]
         hourly_met = datos_met["hourly"]
 
-        tiempos = hourly_mar["time"]
+        # Si no hay datos marítimos, lo marcamos
+        sin_mar = (
+            not datos_mar or
+            "hourly" not in datos_mar or
+            all(v is None for v in datos_mar["hourly"]["wave_height"])
+        )
+
+        hourly_mar = datos_mar["hourly"] if not sin_mar else None
+
+        tiempos = hourly_met["time"]
 
         for i in range(len(tiempos)):
             fecha_iso = datetime.fromisoformat(tiempos[i]).astimezone(timezone.utc).isoformat()
 
+            # --- Datos meteorológicos (siempre disponibles) ---
+            temperatura = hourly_met["temperature_2m"][i]
+            humedad = hourly_met["relative_humidity_2m"][i]
+            prob_lluvia = hourly_met["precipitation_probability"][i]
+
+            # --- Datos marítimos (solo si existen) ---
+            if not sin_mar:
+                v_viento = hourly_mar["wind_speed_10m"][i]
+                d_viento = hourly_mar["wind_direction_10m"][i]
+                altura_ola = hourly_mar["wave_height"][i]
+                periodo_ola = hourly_mar["wave_period"][i]
+                d_ola = hourly_mar["wave_direction"][i]
+            else:
+                v_viento = None
+                d_viento = None
+                altura_ola = None
+                periodo_ola = None
+                d_ola = None
+
             registro = {
                 "spot_id": spot_id,
                 "fecha_hora": fecha_iso,
-                v_viento = hourly_mar["wind_speed_10m"][i] or 0
-                d_viento = hourly_mar["wind_direction_10m"][i] or 0
-                altura_ola = hourly_mar["wave_height"][i] or 0
-                periodo_ola = hourly_mar["wave_period"][i] or 0
-                d_ola = hourly_mar["wave_direction"][i] or 0
-                
-                registro = {
-                    "spot_id": spot_id,
-                    "fecha_hora": fecha_iso,
-                    "velocidad_viento": v_viento,
-                    "direccion_viento": f"{d_viento}°",
-                    "racha_viento": v_viento * 1.3,
-                    "altura_ola": altura_ola,
-                    "periodo_ola": periodo_ola,
-                    "direccion_ola": f"{d_ola}°",
-                    "temperatura": hourly_met["temperature_2m"][i],
-                    "humedad": hourly_met["relative_humidity_2m"][i],
-                    "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
-                }
-                "temperatura": hourly_met["temperature_2m"][i],
-                "humedad": hourly_met["relative_humidity_2m"][i],
-                "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
+                "velocidad_viento": v_viento,
+                "direccion_viento": f"{d_viento}°" if d_viento is not None else None,
+                "racha_viento": v_viento * 1.3 if v_viento is not None else None,
+                "altura_ola": altura_ola,
+                "periodo_ola": periodo_ola,
+                "direccion_ola": f"{d_ola}°" if d_ola is not None else None,
+                "temperatura": temperatura,
+                "humedad": humedad,
+                "probabilidad_lluvia": prob_lluvia,
             }
 
             registros_totales.append(registro)
@@ -123,13 +125,10 @@ def ingestar_datos():
 
     if registros_totales:
         try:
-            print(f"Subiendo {len(registros_totales)} registros a Supabase...")
-
             supabase.table("clima").upsert(
                 registros_totales,
                 on_conflict="spot_id,fecha_hora"
             ).execute()
-
             print("¡Ingesta completada con éxito!")
         except Exception as e:
             print("Error al guardar datos en Supabase:", e)
