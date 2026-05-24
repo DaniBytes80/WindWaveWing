@@ -58,6 +58,8 @@ def ingestar_datos():
     for spot in spots:
         spot_id = spot["id"]
         nombre = spot["nombre"]
+
+        # --- EXTRAER LAT/LNG DESDE GEOGRAPHY ---
         coords = spot["point"]["coordinates"]
         lng = coords[0]
         lat = coords[1]
@@ -65,57 +67,4 @@ def ingestar_datos():
         print(f"-> Procesando datos para el spot: {nombre} ({lat}, {lng})")
 
         datos_mar = consultar_api_maritima(lat, lng)
-        datos_met = consultar_api_meteorologica(lat, lng)
-
-        print("API Marítima:", datos_mar)
-        print("API Meteorológica:", datos_met)
-
-        if not datos_mar or "hourly" not in datos_mar:
-            print(f"   No se pudieron obtener datos marítimos para {nombre}")
-            continue
-
-        if not datos_met or "hourly" not in datos_met:
-            print(f"   No se pudieron obtener datos meteorológicos para {nombre}")
-            continue
-
-        hourly_mar = datos_mar["hourly"]
-        hourly_met = datos_met["hourly"]
-
-        tiempos = hourly_mar["time"]
-
-        for i in range(len(tiempos)):
-            fecha_iso = datetime.fromisoformat(tiempos[i]).astimezone(timezone.utc).isoformat()
-
-            registro = {
-                "spot_id": spot_id,
-                "fecha_hora": fecha_iso,
-                "velocidad_viento": hourly_mar["wind_speed_10m"][i],
-                "direccion_viento": f"{hourly_mar['wind_direction_10m'][i]}°",
-                "racha_viento": hourly_mar["wind_speed_10m"][i] * 1.3,
-                "altura_ola": hourly_mar["wave_height"][i],
-                "periodo_ola": hourly_mar["wave_period"][i],
-                "direccion_ola": f"{hourly_mar['wave_direction'][i]}°",
-                "temperatura": hourly_met["temperature_2m"][i],
-                "humedad": hourly_met["relative_humidity_2m"][i],
-                "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
-            }
-
-            registros_totales.append(registro)
-
-    print("Registros generados:", len(registros_totales))
-
-    if registros_totales:
-        try:
-            print(f"Subiendo {len(registros_totales)} registros a Supabase...")
-
-            supabase.table("clima").upsert(
-                registros_totales,
-                on_conflict="spot_id,fecha_hora"
-            ).execute()
-
-            print("¡Ingesta completada con éxito!")
-        except Exception as e:
-            print("Error al guardar datos en Supabase:", e)
-
-if __name__ == "__main__":
-    ingestar_datos()
+        datos_met = consultar
