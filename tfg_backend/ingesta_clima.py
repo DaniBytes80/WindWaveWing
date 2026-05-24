@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from supabase import create_client
 import requests
 import os
-import json
 
 # --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -12,7 +11,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # --- Funciones auxiliares ---
 def obtener_spots_desde_supabase():
     try:
-        respuesta = supabase.table("spot_geojson").select("*").execute()
+        respuesta = supabase.table("spot").select("id,nombre,pointjson").execute()
         return respuesta.data
     except Exception as e:
         print("Error obteniendo spots:", e)
@@ -55,11 +54,14 @@ def ingestar_datos():
     for spot in spots:
         spot_id = spot["id"]
         nombre = spot["nombre"]
+        geo = spot["pointjson"]
 
-        # --- Extraer coordenadas desde GeoJSON ---
-        geo = spot["point"]
-        lng = geo["coordinates"][0]
-        lat = geo["coordinates"][1]
+        if not geo or "coordinates" not in geo:
+            print(f"⚠ Spot sin coordenadas válidas: {nombre}. Saltando.")
+            continue
+
+        lng = geo["coordinates"][1]   # OJO: tu JSON está invertido
+        lat = geo["coordinates"][0]
 
         print(f"-> Procesando spot: {nombre} ({lat}, {lng})")
 
@@ -67,12 +69,12 @@ def ingestar_datos():
         datos_met = consultar_api_meteorologica(lat, lng)
 
         if not datos_met or "hourly" not in datos_met:
-            print(f"   ⚠ No hay datos meteorológicos para {nombre}. Saltando spot.")
+            print(f"⚠ No hay datos meteorológicos para {nombre}. Saltando.")
             continue
 
         hourly_met = datos_met["hourly"]
 
-        # Si no hay datos marítimos, lo marcamos
+        # Detectar si NO hay datos marítimos
         sin_mar = (
             not datos_mar or
             "hourly" not in datos_mar or
@@ -86,12 +88,10 @@ def ingestar_datos():
         for i in range(len(tiempos)):
             fecha_iso = datetime.fromisoformat(tiempos[i]).astimezone(timezone.utc).isoformat()
 
-            # --- Datos meteorológicos (siempre disponibles) ---
             temperatura = hourly_met["temperature_2m"][i]
             humedad = hourly_met["relative_humidity_2m"][i]
             prob_lluvia = hourly_met["precipitation_probability"][i]
 
-            # --- Datos marítimos (solo si existen) ---
             if not sin_mar:
                 v_viento = hourly_mar["wind_speed_10m"][i]
                 d_viento = hourly_mar["wind_direction_10m"][i]
