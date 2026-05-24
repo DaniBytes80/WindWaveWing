@@ -3,7 +3,7 @@ from supabase import create_client, Client
 import requests
 import os
 
-load_dotenv()
+
 # --- Conexión a Supabase ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
