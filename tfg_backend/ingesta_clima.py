@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 from supabase import create_client, Client # Asegúrate de importar Client
 import requests
 import os
+
+# Cargar variables de entorno
+load_dotenv()
 
 # --- Conexión a Supabase (sin configuraciones de auth) ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
