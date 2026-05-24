@@ -1,3 +1,51 @@
+from datetime import datetime, timezone
+from supabase import create_client
+import requests
+import os
+
+# --- Conexión a Supabase ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+def obtener_spots_desde_supabase():
+    try:
+        return supabase.table("spot").select("*").data
+    except Exception as e:
+        print("Error obteniendo datos de la tabla 'spot':", e)
+        return []
+
+def consultar_api_maritima(lat, lng):
+    url = (
+        "https://marine-api.open-meteo.com/v1/marine?"
+        f"latitude={lat}&longitude={lng}&hourly=wave_height,wave_direction,wave_period,"
+        "wind_speed_10m,wind_direction_10m"
+    )
+    try:
+        respuesta = requests.get(url)
+        if respuesta.status_code != 200:
+            print(f"Error API Marítima ({respuesta.status_code}): {respuesta.text}")
+            return None
+        return respuesta.json()
+    except Exception as e:
+        print("Error en petición HTTP a API marítima:", e)
+        return None
+
+def consultar_api_meteorologica(lat, lng):
+    url = (
+        "https://api.open-meteo.com/v1/forecast?"
+        f"latitude={lat}&longitude={lng}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability"
+    )
+    try:
+        respuesta = requests.get(url)
+        if respuesta.status_code != 200:
+            print(f"Error API Meteorológica ({respuesta.status_code}): {respuesta.text}")
+            return None
+        return respuesta.json()
+    except Exception as e:
+        print("Error en petición HTTP a API meteorológica:", e)
+        return None
+
 def ingestar_datos():
     print(f"[{datetime.now(timezone.utc)}] Iniciando proceso de ingesta...")
 
@@ -6,13 +54,13 @@ def ingestar_datos():
         print("No se encontraron registros en la tabla 'spot'.")
         return
 
-    # 1. Traemos los registros existentes en la tabla 'clima' para mapear sus IDs actuales
-    # Esto evita hacer consultas individuales en el bucle (lo que tumbaría el rendimiento)
+    # 1. MAPEO ROBUSTO CON OBJETOS DATETIME (Soporta UUID en la columna id)
     try:
         clima_existente = supabase.table("clima").select("id", "spot_id", "fecha_hora").data
-        # Creamos un diccionario indexado por (spot_id, fecha_hora) para búsquedas O(1)
+        
+        # Al parsear la fecha de la BD con fromisoformat(), garantizamos compatibilidad total de zonas horarias
         mapa_ids = {
-            (reg["spot_id"], reg["fecha_hora"]): reg["id"] 
+            (reg["spot_id"], datetime.fromisoformat(reg["fecha_hora"]).replace(tzinfo=timezone.utc)): reg["id"] 
             for reg in clima_existente
         }
     except Exception as e:
@@ -42,13 +90,12 @@ def ingestar_datos():
         horas = hourly_met["time"]
 
         for i, hora_str in enumerate(horas):
-            # Formateamos la fecha al formato ISO estricto con zona horaria
+            # Convertimos la hora de la API a un objeto datetime nativo en UTC
             dt_objeto = datetime.fromisoformat(hora_str).replace(tzinfo=timezone.utc)
-            fecha_iso = dt_objeto.isoformat()
 
             registro = {
                 "spot_id": spot_id,
-                "fecha_hora": fecha_iso,
+                "fecha_hora": dt_objeto.isoformat(),
                 "temperature": hourly_met["temperature_2m"][i],
                 "humidity": hourly_met["relative_humidity_2m"][i],
                 "precipitation_probability": hourly_met["precipitation_probability"][i],
@@ -59,24 +106,28 @@ def ingestar_datos():
                 "wave_direction": hourly_mar["wave_direction"][i]
             }
 
-            # 2. COMPROBACIÓN SUCESIVA: ¿Ya existe este spot a esta hora en la base de datos?
-            clave_busqueda = (spot_id, fecha_iso)
+            # 2. COMPARACIÓN SEMÁNTICA DE CLAVES
+            # Buscamos usando el objeto datetime, ignorando discrepancias de formato string
+            clave_busqueda = (spot_id, dt_objeto)
             if clave_busqueda in mapa_ids:
-                # Si existe, le inyectamos su ID actual de la base de datos para que actúe el UPDATE
+                # Si existe, inyectamos el UUID correspondiente para que Supabase ejecute un UPDATE
                 registro["id"] = mapa_ids[clave_busqueda]
 
             registros_totales.append(registro)
 
-    # 3. Inserción Masiva Inteligente
+    # 3. Transmisión Atómica del Incremento del Sprint
     if registros_totales:
         print(f"Enviando {len(registros_totales)} registros a la tabla 'clima'...")
         try:
-            # Al incluir el campo 'id' en los que ya existían, Supabase actualiza. 
-            # Los que no llevan 'id' se insertan como nuevos.
+            # Los registros con clave 'id' conteniendo un UUID se actualizarán sucesivamente.
+            # Los que no la tengan, se insertarán y Supabase les asignará un gen_random_uuid() nativo.
             respuesta = supabase.table("clima").upsert(registros_totales).data
-            print("¡Sincronización y actualización sucesiva completadas con éxito!")
+            print("¡Sincronización y actualización sucesiva (UUID) completadas con éxito!")
             return respuesta
         except Exception as e:
-            print("Error durante la transacción en Supabase:", e)
+            print("Error durante la transacción 'upsert' en Supabase:", e)
     else:
         print("No se consolidaron registros válidos.")
+
+if __name__ == "__main__":
+    ingestar_datos()
