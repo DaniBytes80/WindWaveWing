@@ -93,12 +93,25 @@ def ingestar_datos():
             registro = {
                 "spot_id": spot_id,
                 "fecha_hora": fecha_iso,
-                "velocidad_viento": hourly_mar["wind_speed_10m"][i],
-                "direccion_viento": f"{hourly_mar['wind_direction_10m'][i]}°",
-                "racha_viento": hourly_mar["wind_speed_10m"][i] * 1.3,
-                "altura_ola": hourly_mar["wave_height"][i],
-                "periodo_ola": hourly_mar["wave_period"][i],
-                "direccion_ola": f"{hourly_mar['wave_direction'][i]}°",
+                v_viento = hourly_mar["wind_speed_10m"][i] or 0
+                d_viento = hourly_mar["wind_direction_10m"][i] or 0
+                altura_ola = hourly_mar["wave_height"][i] or 0
+                periodo_ola = hourly_mar["wave_period"][i] or 0
+                d_ola = hourly_mar["wave_direction"][i] or 0
+                
+                registro = {
+                    "spot_id": spot_id,
+                    "fecha_hora": fecha_iso,
+                    "velocidad_viento": v_viento,
+                    "direccion_viento": f"{d_viento}°",
+                    "racha_viento": v_viento * 1.3,
+                    "altura_ola": altura_ola,
+                    "periodo_ola": periodo_ola,
+                    "direccion_ola": f"{d_ola}°",
+                    "temperatura": hourly_met["temperature_2m"][i],
+                    "humedad": hourly_met["relative_humidity_2m"][i],
+                    "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
+                }
                 "temperatura": hourly_met["temperature_2m"][i],
                 "humedad": hourly_met["relative_humidity_2m"][i],
                 "probabilidad_lluvia": hourly_met["precipitation_probability"][i],
