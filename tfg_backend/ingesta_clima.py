@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from supabase import create_client, Client
+from supabase import create_client
 import requests
 import os
 
