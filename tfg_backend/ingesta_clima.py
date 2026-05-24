@@ -1,13 +1,12 @@
 from datetime import datetime, timezone
-from dotenv import load_dotenv
 from supabase import create_client, Client
 import requests
 import os
 
 load_dotenv()
 # --- Conexión a Supabase ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # --- Funciones auxiliares ---
