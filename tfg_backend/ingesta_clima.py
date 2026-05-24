@@ -1,60 +1,22 @@
-from datetime import datetime, timezone
-from supabase import create_client
-import requests
-import os
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-def obtener_spots_desde_supabase():
-    try:
-        res = supabase.table("spot").select("*").data
-        print(f"[DEBUG] Spots recuperados de la BD: {len(res) if res else 0}")
-        return res
-    except Exception as e:
-        print("[ERROR] Fallo al obtener spots:", e)
-        return []
-
-def consultar_api_maritima(lat, lng):
-    url = f"https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lng}&hourly=wave_height,wave_direction,wave_period,wind_speed_10m,wind_direction_10m"
-    try:
-        respuesta = requests.get(url)
-        if respuesta.status_code != 200:
-            print(f"[DEBUG] API Marítima HTTP {respuesta.status_code}")
-            return None
-        return respuesta.json()
-    except Exception as e:
-        return None
-
-def consultar_api_meteorologica(lat, lng):
-    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability"
-    try:
-        respuesta = requests.get(url)
-        if respuesta.status_code != 200:
-            print(f"[DEBUG] API Met HTTP {respuesta.status_code}")
-            return None
-        return respuesta.json()
-    except Exception as e:
-        return None
+import re  # Asegúrate de añadir este import al principio del archivo
 
 def ingestar_datos():
-    print(f"[{datetime.now(timezone.utc)}] Iniciando depuración de ingesta...")
+    print(f"[{datetime.now(timezone.utc)}] Iniciando proceso de ingesta...")
 
     spots = obtener_spots_desde_supabase()
     if not spots:
-        print("[ALERTA] La lista de spots está vacía. El bucle no llegará a ejecutarse.")
+        print("No se encontraron registros en la tabla 'spot'.")
         return
 
+    # Mapeo en memoria para control de duplicados (Soporta el id UUID)
     try:
         clima_existente = supabase.table("clima").select("id", "spot_id", "fecha_hora").data
-        print(f"[DEBUG] Registros preexistentes en la tabla 'clima': {len(clima_existente) if clima_existente else 0}")
         mapa_ids = {
             (reg["spot_id"], datetime.fromisoformat(reg["fecha_hora"]).replace(tzinfo=timezone.utc)): reg["id"] 
             for reg in clima_existente
         }
     except Exception as e:
-        print("[DEBUG] No se pudo mapear el histórico (puede estar vacío):", e)
+        print("Historial de clima vacío o inaccesible (se asumen nuevas inserciones).")
         mapa_ids = {}
 
     registros_totales = []
@@ -62,23 +24,46 @@ def ingestar_datos():
     for spot in spots:
         spot_id = spot["id"]
         nombre = spot["nombre"]
-        
-        # Extracción geográfica
-        coords = spot["point"]["coordinates"]
-        lng, lat = coords[0], coords[1]
+        point_data = spot.get("point")
+
+        if not point_data:
+            print(f"⚠️ El spot {nombre} no tiene datos geográficos en la columna 'point'. Saltando...")
+            continue
+
+        # --- PARSER INTELIGENTE DE GEOGRAPHY (WKT VS GEOJSON) ---
+        try:
+            if isinstance(point_data, str):
+                # Si Supabase nos devuelve el formato WKT: "POINT(-5.6042 36.0142)"
+                # Extraemos los números flotantes con una expresión regular
+                match = re.match(r"POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)", point_data, re.IGNORECASE)
+                if match:
+                    lng = float(match.group(1))
+                    lat = float(match.group(2))
+                else:
+                    raise ValueError("Formato WKT inválido")
+            elif isinstance(point_data, dict) and "coordinates" in point_data:
+                # Si en algún entorno devuelve estructura GeoJSON
+                lng = float(point_data["coordinates"][0])
+                lat = float(point_data["coordinates"][1])
+            else:
+                print(f"⚠️ Formato geográfico no reconocido para el spot {nombre}. Saltando...")
+                continue
+        except Exception as err:
+            print(f"❌ Error al parsear coordenadas del spot {nombre}: {err}")
+            continue
+
+        print(f"-> Procesando datos meteorológicos para: {nombre} ({lat}, {lng})")
 
         datos_mar = consultar_api_maritima(lat, lng)
         datos_met = consultar_api_meteorologica(lat, lng)
 
         if not datos_mar or not datos_met or "hourly" not in datos_met or "hourly" not in datos_mar:
-            print(f"[DEBUG] Salto de spot '{nombre}' por falta de respuesta de APIs externas.")
+            print(f"⚠️ Error de respuesta de APIs externas para el spot {nombre}.")
             continue
 
         hourly_met = datos_met["hourly"]
         hourly_mar = datos_mar["hourly"]
         horas = hourly_met["time"]
-
-        print(f"[DEBUG] Procesando {len(horas)} horas de pronóstico para el spot: {nombre}")
 
         for i, hora_str in enumerate(horas):
             dt_objeto = datetime.fromisoformat(hora_str).replace(tzinfo=timezone.utc)
@@ -103,23 +88,14 @@ def ingestar_datos():
 
             registros_totales.append(registro)
 
-    print(f"[DEBUG] Total de registros preparados para enviar: {len(registros_totales)}")
-
+    # Inserción Masiva con actualización sucesiva
     if registros_totales:
-        print(f"Enviando lote a Supabase...")
+        print(f"Enviando {len(registros_totales)} registros a la tabla 'clima'...")
         try:
-            # Forzamos captura de la respuesta cruda para auditar qué responde el servidor
-            objeto_respuesta = supabase.table("clima").upsert(registros_totales).data
-            print(f"[RESULTADO SUPABASE] Objeto devuelto: {objeto_respuesta}")
-            
-            if objeto_respuesta is not None and len(objeto_respuesta) == 0:
-                print("[💥 ALERTA CRÍTICA] Supabase aceptó la petición pero devolvió 0 filas insertadas. Esto es un síntoma inequívoco de bloqueo por RLS (Row Level Security) o uso de la clave 'anon' incorrecta en GitHub Secrets.")
-            else:
-                print("¡Registros sincronizados con éxito!")
+            respuesta = supabase.table("clima").upsert(registros_totales).data
+            print("¡Sincronización masiva completada con éxito en Supabase!")
+            return respuesta
         except Exception as e:
-            print("[ERROR CRÍTICO] La base de datos rechazó la transacción de inmediato:", e)
+            print("Error en la transacción con Supabase:", e)
     else:
-        print("[ALERTA] Cero registros construidos. Revisa las coordenadas de los spots.")
-
-if __name__ == "__main__":
-    ingestar_datos()
+        print("No se generaron registros válidos para insertar.")
