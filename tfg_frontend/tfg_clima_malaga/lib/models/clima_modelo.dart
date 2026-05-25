@@ -1,5 +1,5 @@
 class ClimaModelo {
-  final String spotId; // ← UUID correcto
+  final String spotId;
   final DateTime fechaHora;
   final double velocidadViento;
   final String direccionViento;
@@ -7,6 +7,9 @@ class ClimaModelo {
   final double alturaOla;
   final double periodoOla;
   final String direccionOla;
+
+  // ⭐ NUEVO CAMPO
+  final double probabilidadLluvia;
 
   ClimaModelo({
     required this.spotId,
@@ -17,11 +20,12 @@ class ClimaModelo {
     required this.alturaOla,
     required this.periodoOla,
     required this.direccionOla,
+    required this.probabilidadLluvia,
   });
 
   factory ClimaModelo.fromJson(Map<String, dynamic> json) {
     return ClimaModelo(
-      spotId: json['spot_id'], // ← UUID como String
+      spotId: json['spot_id'],
       fechaHora: DateTime.parse(json['fecha_hora']),
       velocidadViento: (json['velocidad_viento'] as num).toDouble(),
       direccionViento: json['direccion_viento'] ?? '',
@@ -29,6 +33,11 @@ class ClimaModelo {
       alturaOla: (json['altura_ola'] as num).toDouble(),
       periodoOla: (json['periodo_ola'] as num).toDouble(),
       direccionOla: json['direccion_ola'] ?? '',
+
+      // ⭐ NUEVO MAPEADO
+      probabilidadLluvia: json['probabilidad_lluvia'] != null
+          ? (json['probabilidad_lluvia'] as num).toDouble()
+          : 0.0,
     );
   }
 }
