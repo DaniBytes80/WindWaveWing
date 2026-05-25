@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tfg_clima_malaga/models/spot.dart';
+import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/utils/auth_gate.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'package:tfg_clima_malaga/views/www_buscador.dart';
@@ -60,14 +61,14 @@ class _VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
       ),
 
       drawer: Drawer(
-        width: 280, // ← antes EstadoApp().anchoDrawer
+        width: 280,
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Align(
           alignment: Alignment.topLeft,
           child: Container(
             margin: const EdgeInsets.only(top: 100),
-            height: 500, // ← antes EstadoApp().altoDrawer
+            height: 500,
             decoration: BoxDecoration(
               color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
               borderRadius: const BorderRadius.only(
@@ -75,11 +76,37 @@ class _VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                 bottomRight: Radius.circular(20),
               ),
             ),
-            child: const AuthGate(),
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                const Text(
+                  "Menú usuario",
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Email: ${UserManager().perfil?.email ?? 'No logueado'}",
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    await UserManager().logout();
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AuthGate()),
+                        (_) => false,
+                      );
+                    }
+                  },
+                  child: const Text("Cerrar sesión"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-
       body: Stack(
         children: [
           GoogleMap(

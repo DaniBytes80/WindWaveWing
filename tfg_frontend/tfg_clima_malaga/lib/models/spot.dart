@@ -31,13 +31,16 @@ class Spot {
   });
 
   factory Spot.fromJson(Map<String, dynamic> json) {
+    // Extraer coordenadas desde pointjson
+    final coords = json['pointjson']?['coordinates'] ?? [0.0, 0.0];
+
     return Spot(
       id: json['id'],
       nombre: json['nombre'],
       icono: json['icono'],
       camUrl: json['cam_url'],
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
+      lat: (coords[0] as num).toDouble(),
+      lng: (coords[1] as num).toDouble(),
       isSurf: json['is_surf'] ?? false,
       isKitesurf: json['is_kitesurf'] ?? false,
       isWindsurf: json['is_windsurf'] ?? false,

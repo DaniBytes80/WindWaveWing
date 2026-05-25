@@ -24,8 +24,8 @@ class SpotBd {
           is_wing,
           is_sail,
           created_at,
-          ST_Y(point::geometry) as lat,
-          ST_X(point::geometry) as lng
+          pointjson,
+          id_boya
         ''')
         .order('nombre');
 
@@ -58,8 +58,8 @@ class SpotBd {
           is_wing,
           is_sail,
           created_at,
-          ST_Y(point::geometry) as lat,
-          ST_X(point::geometry) as lng
+          pointjson,
+          id_boya
         ''')
         .eq('id', id)
         .maybeSingle();

@@ -5,7 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/utils/auth_gate.dart';
+import 'package:tfg_clima_malaga/views/principal.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'configuration.dart';
 
@@ -51,24 +51,19 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _inicializarApp() async {
-    // 1. Cargar spots desde Supabase
+    // 1. Cargar spots
     await SpotManager().inicializar();
-
-    // 2. Seleccionar spot inicial (Málaga si existe)
     SpotManager().seleccionarSpotInicial();
-
-    // 3. Cargar predicciones del spot inicial
     await SpotManager().cargarPrediccionInicial();
 
-    // 4. Cargar perfil si hay sesión activa
+    // 2. Cargar perfil si hay sesión (visitante si no)
     await UserManager().cargarPerfilSiExiste();
 
-    // 5. Ir a AuthGate (decide login o app)
-    if (mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AuthGate()));
-    }
+    // 3. Ir SIEMPRE a VentanaInicioUsuario
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),
+    );
   }
 
   @override
