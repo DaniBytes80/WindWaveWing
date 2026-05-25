@@ -18,7 +18,6 @@ class WWWTablaClima extends StatelessWidget {
 
     final diasAgrupados = _agruparPorDia(datosMeteorologicos);
 
-    // ⭐ FILTRAR días anteriores a HOY y ORDENAR ascendente
     final diasOrdenados =
         diasAgrupados.entries
             .where(
@@ -40,17 +39,27 @@ class WWWTablaClima extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // COLUMNA FIJA
+          // ⭐ COLUMNA FIJA
           Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
               Text(" ", style: TextStyle(color: Colors.white, fontSize: 12)),
-              Text("Dir", style: TextStyle(color: Colors.white, fontSize: 12)),
-              Text(
-                "Viento",
-                style: TextStyle(color: Colors.white, fontSize: 12),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Viento",
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                  Text(
+                    "km/h",
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
               ),
+
               Text("Ola", style: TextStyle(color: Colors.white, fontSize: 12)),
               Text(
                 "Lluvia",
@@ -59,9 +68,9 @@ class WWWTablaClima extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
 
-          // TABLA DE 7 DÍAS
+          // ⭐ TABLA DE DÍAS ESTRECHA
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -76,9 +85,9 @@ class WWWTablaClima extends StatelessWidget {
                     onTap: () =>
                         _mostrarBottomSheet(context, entry.value, fecha),
                     child: Container(
-                      width: 70,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      width: 52, // ⭐ MÁS ESTRECHO
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.35),
                         borderRadius: BorderRadius.circular(10),
@@ -93,7 +102,7 @@ class WWWTablaClima extends StatelessWidget {
                                 _capitalizar(nombreDia),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -101,37 +110,41 @@ class WWWTablaClima extends StatelessWidget {
                                 fechaCorta,
                                 style: const TextStyle(
                                   color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // ⭐ VIENTO (flecha + valor)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Transform.rotate(
+                                angle: _direccionToAngle(resumen["dir"]),
+                                child: const Icon(
+                                  Icons.arrow_upward,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                resumen["viento"],
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
 
-                          // Dirección dominante
-                          Transform.rotate(
-                            angle: _direccionToAngle(resumen["dir"]),
-                            child: const Icon(
-                              Icons.arrow_upward,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-
-                          // Viento medio
-                          Text(
-                            "${resumen["viento"]}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          // Ola media
+                          // Ola
                           Text(
                             "${resumen["ola"]}m",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
 
@@ -141,13 +154,13 @@ class WWWTablaClima extends StatelessWidget {
                             children: [
                               Text(
                                 _iconoLluvia(resumen["lluvia"]),
-                                style: const TextStyle(fontSize: 14),
+                                style: const TextStyle(fontSize: 12),
                               ),
                               Text(
                                 "${resumen["lluvia"]}%",
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
@@ -165,7 +178,6 @@ class WWWTablaClima extends StatelessWidget {
     );
   }
 
-  // AGRUPAR POR DÍA
   Map<String, List<ClimaModelo>> _agruparPorDia(List<ClimaModelo> datos) {
     final mapa = <String, List<ClimaModelo>>{};
     for (final clima in datos) {
@@ -177,7 +189,6 @@ class WWWTablaClima extends StatelessWidget {
     return mapa;
   }
 
-  // RESUMEN DIARIO
   Map<String, dynamic> _calcularResumen(List<ClimaModelo> datos) {
     final direcciones = <String, int>{};
     for (final c in datos) {
@@ -207,7 +218,6 @@ class WWWTablaClima extends StatelessWidget {
     };
   }
 
-  // ICONO LLUVIA
   String _iconoLluvia(String porcentaje) {
     final p = int.tryParse(porcentaje) ?? 0;
     if (p == 0) return "☀️";
@@ -217,7 +227,6 @@ class WWWTablaClima extends StatelessWidget {
     return "⛈️";
   }
 
-  // BOTTOMSHEET
   void _mostrarBottomSheet(
     BuildContext context,
     List<ClimaModelo> datosDia,
@@ -268,20 +277,16 @@ class WWWTablaClima extends StatelessWidget {
     );
   }
 
-  // ⭐ TABLA HORAS (CORREGIDA)
   Widget _tablaHoras(List<ClimaModelo> datos) {
-    // Ordenar por hora
     final listaOrdenada = [...datos]
       ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
 
-    // Detectar si es hoy
     final ahora = DateTime.now();
     final formatoDia = DateFormat('yyyy-MM-dd');
     final esHoy =
         formatoDia.format(listaOrdenada.first.fechaHora.toLocal()) ==
         formatoDia.format(ahora);
 
-    // Filtrar horas
     final listaFiltrada = esHoy
         ? listaOrdenada
               .where((c) => c.fechaHora.toLocal().hour >= ahora.hour)
@@ -315,45 +320,42 @@ class WWWTablaClima extends StatelessWidget {
           }),
         ],
         rows: [
-          // Dirección viento
-          DataRow(
-            cells: [
-              const DataCell(Icon(Icons.air, color: Colors.white, size: 16)),
-              ...listaFiltrada.map(
-                (clima) => DataCell(
-                  Transform.rotate(
-                    angle: _direccionToAngle(clima.direccionViento),
-                    child: const Icon(
-                      Icons.arrow_upward,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Viento
-          DataRow(
-            cells: [
-              const DataCell(Icon(Icons.speed, color: Colors.white, size: 16)),
-              ...listaFiltrada.map(
-                (clima) => DataCell(
-                  Text(
-                    clima.velocidadViento.toStringAsFixed(0),
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Rachas
           DataRow(
             cells: [
               const DataCell(
-                Icon(Icons.air_outlined, color: Colors.white, size: 16),
+                Text("Viento", style: TextStyle(color: Colors.white)),
+              ),
+              ...listaFiltrada.map(
+                (clima) => DataCell(
+                  Row(
+                    children: [
+                      Transform.rotate(
+                        angle: _direccionToAngle(clima.direccionViento),
+                        child: const Icon(
+                          Icons.arrow_upward,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        clima.velocidadViento.toStringAsFixed(0),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          DataRow(
+            cells: [
+              const DataCell(
+                Text("Racha", style: TextStyle(color: Colors.white)),
               ),
               ...listaFiltrada.map(
                 (clima) => DataCell(
@@ -366,10 +368,11 @@ class WWWTablaClima extends StatelessWidget {
             ],
           ),
 
-          // Ola
           DataRow(
             cells: [
-              const DataCell(Icon(Icons.waves, color: Colors.white, size: 16)),
+              const DataCell(
+                Text("Ola", style: TextStyle(color: Colors.white)),
+              ),
               ...listaFiltrada.map(
                 (clima) => DataCell(
                   Text(
@@ -381,10 +384,11 @@ class WWWTablaClima extends StatelessWidget {
             ],
           ),
 
-          // Periodo
           DataRow(
             cells: [
-              const DataCell(Icon(Icons.timer, color: Colors.white, size: 16)),
+              const DataCell(
+                Text("Periodo", style: TextStyle(color: Colors.white)),
+              ),
               ...listaFiltrada.map(
                 (clima) => DataCell(
                   Text(
@@ -396,10 +400,11 @@ class WWWTablaClima extends StatelessWidget {
             ],
           ),
 
-          // Lluvia
           DataRow(
             cells: [
-              const DataCell(Icon(Icons.cloud, color: Colors.white, size: 16)),
+              const DataCell(
+                Text("Lluvia", style: TextStyle(color: Colors.white)),
+              ),
               ...listaFiltrada.map(
                 (clima) => DataCell(
                   Text(
@@ -415,7 +420,6 @@ class WWWTablaClima extends StatelessWidget {
     );
   }
 
-  // ÁNGULO DIRECCIÓN
   double _direccionToAngle(String direccion) {
     final mapa = {
       "N": 0,

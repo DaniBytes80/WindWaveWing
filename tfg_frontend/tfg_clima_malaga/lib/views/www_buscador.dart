@@ -26,15 +26,11 @@ class WWWBuscador extends StatelessWidget {
         );
       },
 
-      // Cuando el usuario selecciona un spot
       onSelected: (String selection) {
         controller.text = selection;
         onSearch(selection);
       },
 
-      // ============================
-      //  CAMPO DE TEXTO PERSONALIZADO
-      // ============================
       fieldViewBuilder:
           (context, fieldController, focusNode, onFieldSubmitted) {
             if (fieldController.text != controller.text) {
@@ -43,7 +39,7 @@ class WWWBuscador extends StatelessWidget {
 
             return Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.60),
+                color: Colors.black.withOpacity(0.55),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white24),
               ),
@@ -53,26 +49,17 @@ class WWWBuscador extends StatelessWidget {
                 focusNode: focusNode,
                 onSubmitted: (valor) => onSearch(valor),
                 style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: "Buscar spot...",
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                  suffixIcon: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white70,
-                    ),
-                    onPressed: () => onSearch(fieldController.text),
-                  ),
+                  hintStyle: TextStyle(color: Colors.white54),
+                  prefixIcon: Icon(Icons.search, color: Colors.white70),
+                  suffixIcon: null, // solo quitamos la flecha
                 ),
               ),
             );
           },
 
-      // ============================
-      //  MENÚ DESPLEGABLE PERSONALIZADO
-      // ============================
       optionsViewBuilder: (context, onSelected, opcionesFiltradas) {
         return Align(
           alignment: Alignment.topCenter,
