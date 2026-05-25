@@ -38,4 +38,10 @@ class EstilosWWW {
     color: colorBordeTabla,
     fontWeight: FontWeight.bold,
   );
+  static final ButtonStyle botonOscuro = ElevatedButton.styleFrom(
+    backgroundColor: colorBordeTabla,
+    foregroundColor: colorEnlace,
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  );
 }

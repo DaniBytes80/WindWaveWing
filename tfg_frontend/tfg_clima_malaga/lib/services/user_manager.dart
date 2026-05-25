@@ -8,6 +8,8 @@ class UserManager {
 
   final _supabase = Supabase.instance.client;
 
+  Perfil? get usuario => _perfil;
+
   Perfil? _perfil;
   bool _isLogueado = false;
 

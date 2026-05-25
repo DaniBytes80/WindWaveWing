@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tfg_clima_malaga/views/tema.dart';
 
 class WWWBuscador extends StatelessWidget {
   final TextEditingController controller;
@@ -39,7 +40,7 @@ class WWWBuscador extends StatelessWidget {
 
             return Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.55),
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white24),
               ),
@@ -68,7 +69,7 @@ class WWWBuscador extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.only(top: 5),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.85),
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.white24),
               ),

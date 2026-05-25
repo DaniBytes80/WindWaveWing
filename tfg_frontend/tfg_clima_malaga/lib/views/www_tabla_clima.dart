@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
-import 'tema.dart';
 import 'package:tfg_clima_malaga/models/clima_modelo.dart';
+import 'package:tfg_clima_malaga/views/tema.dart';
 
 class WWWTablaClima extends StatelessWidget {
   final List<ClimaModelo> datosMeteorologicos;
@@ -34,7 +34,7 @@ class WWWTablaClima extends StatelessWidget {
       height: 130,
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
+        color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -89,7 +89,9 @@ class WWWTablaClima extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 1),
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.35),
+                        color: EstilosWWW.colorFondoPantalla.withValues(
+                          alpha: 0.35,
+                        ),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
@@ -237,7 +239,7 @@ class WWWTablaClima extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black.withOpacity(0.85),
+      backgroundColor: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.85),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),

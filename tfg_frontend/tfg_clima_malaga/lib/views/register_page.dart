@@ -97,10 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent.withValues(alpha: 0.8),
-                    foregroundColor: Colors.white,
-                  ),
+                  style: EstilosWWW.botonOscuro,
                   onPressed: signUp,
                   child: const Text("Confirmar"),
                 ),

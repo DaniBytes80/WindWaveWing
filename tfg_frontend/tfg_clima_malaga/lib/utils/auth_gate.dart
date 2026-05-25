@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
-
+import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/views/login_page.dart';
-import 'package:tfg_clima_malaga/views/principal.dart'; // ← aquí el cambio
+import 'package:tfg_clima_malaga/views/principal.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -20,22 +18,26 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    _inicializar();
+    _cargarDatosIniciales();
   }
 
-  Future<void> _inicializar() async {
+  Future<void> _cargarDatosIniciales() async {
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
-      await UserManager().cargarPerfilSiExiste();
-      await SpotManager().inicializar();
-      SpotManager().seleccionarSpotInicial();
-      await SpotManager().cargarPrediccionInicial();
+      await _cargarTodo();
     }
 
     if (mounted) {
       setState(() => _cargando = false);
     }
+  }
+
+  Future<void> _cargarTodo() async {
+    await UserManager().cargarPerfilSiExiste();
+    await SpotManager().inicializar();
+    SpotManager().seleccionarSpotInicial();
+    await SpotManager().cargarPrediccionInicial();
   }
 
   @override
@@ -50,10 +52,23 @@ class _AuthGateState extends State<AuthGate> {
         final session = snapshot.data?.session;
 
         if (session == null) {
+          UserManager().logout();
           return const LoginPage();
         }
 
-        return const VentanaInicioUsuario(); // ← tu widget de inicio
+        // ⭐ Cargar datos cuando se detecta sesión nueva
+        return FutureBuilder(
+          future: _cargarTodo(),
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            return const VentanaInicioUsuario();
+          },
+        );
       },
     );
   }

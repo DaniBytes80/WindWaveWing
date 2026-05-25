@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tfg_clima_malaga/models/clima_modelo.dart';
 import 'package:tfg_clima_malaga/models/spot.dart';
 import 'package:tfg_clima_malaga/services/spot_bd.dart';
@@ -9,6 +10,8 @@ class SpotManager extends ChangeNotifier {
   SpotManager._internal();
 
   final SpotBd _db = SpotBd();
+  List<String> favoritos = [];
+  final supabase = Supabase.instance.client;
 
   List<Spot> _spots = [];
   List<Spot> get spots => _spots;
@@ -72,5 +75,40 @@ class SpotManager extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> cargarFavoritos() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final data = await supabase
+        .from('favoritos_spots')
+        .select('spot_id')
+        .eq('perfil_id', user.id);
+
+    favoritos = data.map<String>((e) => e['spot_id'] as String).toList();
+  }
+
+  Future<void> toggleFavorito(String spotId) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final existe = await supabase
+        .from('favoritos_spots')
+        .select()
+        .eq('perfil_id', user.id)
+        .eq('spot_id', spotId)
+        .maybeSingle();
+
+    if (existe == null) {
+      await supabase.from('favoritos_spots').insert({
+        'perfil_id': user.id,
+        'spot_id': spotId,
+      });
+    } else {
+      await supabase.from('favoritos_spots').delete().eq('id', existe['id']);
+    }
+
+    await cargarFavoritos();
   }
 }

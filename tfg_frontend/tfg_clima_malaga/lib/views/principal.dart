@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tfg_clima_malaga/models/spot.dart';
-import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/utils/auth_gate.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'package:tfg_clima_malaga/views/www_buscador.dart';
 import 'package:tfg_clima_malaga/views/www_tabla_clima.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
+
+// ⭐ IMPORTA EL NUEVO DRAWER
+import 'package:tfg_clima_malaga/drawer/www_drawer.dart';
 
 class VentanaInicioUsuario extends StatefulWidget {
   const VentanaInicioUsuario({super.key});
@@ -55,58 +56,32 @@ class _VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(spotActual.nombre, style: EstilosWWW.tituloApp),
         backgroundColor: EstilosWWW.colorFondoPantalla,
         iconTheme: const IconThemeData(color: Colors.white),
-      ),
-
-      drawer: Drawer(
-        width: 280,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: Container(
-            margin: const EdgeInsets.only(top: 100),
-            height: 500,
-            decoration: BoxDecoration(
-              color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+        title: Row(
+          children: [
+            GestureDetector(
+              onTap: () async {
+                await SpotManager().toggleFavorito(spotActual.id);
+                setState(() {}); // ⭐ Refresca el AppBar
+              },
+              child: Icon(
+                SpotManager().favoritos.contains(spotActual.id)
+                    ? Icons.star
+                    : Icons.star_border,
+                color: Colors.yellow,
+                size: 28,
               ),
             ),
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const Text(
-                  "Menú usuario",
-                  style: TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Email: ${UserManager().perfil?.email ?? 'No logueado'}",
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    await UserManager().logout();
-                    if (context.mounted) {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AuthGate()),
-                        (_) => false,
-                      );
-                    }
-                  },
-                  child: const Text("Cerrar sesión"),
-                ),
-              ],
-            ),
-          ),
+            const SizedBox(width: 12),
+            Text(spotActual.nombre, style: EstilosWWW.tituloApp),
+          ],
         ),
       ),
+
+      // ⭐ AQUÍ VA EL NUEVO MENÚ DE USUARIO
+      drawer: const WWWDrawer(),
+
       body: Stack(
         children: [
           GoogleMap(
