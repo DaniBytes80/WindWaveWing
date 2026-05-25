@@ -1,0 +1,194 @@
+Una vez creado el proyecto en Supabase, se crean las siguientes tablas. 
+
+Tabla de Usuario:
+La tabla de usuario está vinculada con la auth.users del sistema de Supabase por motivos de gestión
+de seguridad de los mismos.
+
+create table public."Perfiles" (
+  nombre character varying null,
+  email character varying not null,
+  rol character varying not null,
+  fecha_registro timestamp with time zone not null default now(),
+  telefono character varying null,
+  surf boolean null default false,
+  kite_surf boolean null default false,
+  windsurf boolean null default false,
+  wing boolean null default false,
+  sail boolean null default false,
+  id uuid not null default auth.uid (),
+  avatar_url text null,
+  constraint Perfiles_pkey primary key (id),
+  constraint Perfiles_email_key unique (email)
+) TABLESPACE pg_default;
+
+Tabla de Spots y tabla favoritos_spots:
+create table public.spot (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  nombre text not null,
+  icono text null,
+  cam_url text null,
+  point geography not null,
+  is_surf boolean null,
+  is_kitesurf boolean null,
+  is_windsurf boolean null,
+  is_wing boolean null,
+  is_sail boolean null,
+  created_at timestamp with time zone not null default now(),
+  pointjson jsonb null,
+  id_boya text null,
+  constraint spot_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create table public.clima (
+  spot_id uuid null,
+  fecha_hora timestamp with time zone not null,
+  velocidad_viento double precision null,
+  direccion_viento text null,
+  racha_viento double precision null,
+  altura_ola double precision null,
+  periodo_ola double precision null,
+  direccion_ola text null,
+  temperatura double precision null,
+  humedad double precision null,
+  probabilidad_lluvia double precision null,
+  id uuid not null default gen_random_uuid (),
+  constraint clima_pkey primary key (id),
+  constraint clima_unique unique (spot_id, fecha_hora),
+  constraint clima_spot_id_fkey foreign KEY (spot_id) references spot (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+-- Politicas de la tabla clima
+ALTER TABLE public.clima ENABLE ROW LEVEL SECURITY;
+ 
+CREATE POLICY "Allow insert for authenticated"
+ON clima
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow select for authenticated"
+ON clima
+FOR SELECT
+TO authenticated
+USING (true); -- O verifica auth.uid() = user_id
+
+CREATE POLICY "Allow update for authenticated"
+ON clima
+FOR UPDATE
+TO authenticated
+WITH CHECK (true);
+
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE clima TO postgres, anon, authenticated, service_role;   
+
+-- Creación de la tabla spots favoritos.
+create table public.favoritos_spots (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  perfil_id uuid not null,
+  spot_id uuid not null,
+  created_at timestamp with time zone not null default now(),
+  constraint favoritos_spots_pkey primary key (id),
+  constraint favoritos_spots_perfil_id_spot_id_key unique (perfil_id, spot_id),
+  constraint favoritos_spots_perfil_id_fkey foreign KEY (perfil_id) references "Perfiles" (id) on delete CASCADE,
+  constraint favoritos_spots_spot_id_fkey foreign KEY (spot_id) references spot (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+Se ha creado con el siguiente script.
+
+-- Habilitamos la extensión para generar UUIDs
+create extension if not exists "uuid-ossp";
+
+-- Creamos la tabla de spots primero
+create table public.spot (
+  id uuid primary key default uuid_generate_v4(), 
+  nombre text not null,
+  icono text,
+  cam_url text,
+  point geography(POINT, 4326) not null,
+  is_surf boolean default null,
+  is_kitesurf boolean default null,
+  is_windsurf boolean default null,
+  is_wing boolean default null,
+  is_sale boolean default null,
+  created_at timestamp with time zone default now() not null
+);
+
+-- Creamos la tabla de favoritos (Relación muchos a muchos)
+-- Asegúrate de que la tabla "Perfiles" tenga una columna 'id' que sea UUID
+create table public.favoritos_spots (
+  id uuid primary key default uuid_generate_v4(),
+  perfil_id uuid references public."Perfiles"(id) on delete cascade not null,
+  spot_id uuid references public.spot(id) on delete cascade not null,
+  created_at timestamp with time zone default now() not null,
+  unique(perfil_id, spot_id)
+);
+
+Políticas de seguridad de RSL de Supabase a nivel de perfiles.
+-- 1. Habilitar RLS en la tabla (si no lo está ya)
+ALTER TABLE public."Perfiles" ENABLE ROW LEVEL SECURITY;
+
+-- 2. Regla para CONSULTAR (SELECT)
+-- Permite que cualquier usuario registrado (o incluso visitantes) vea los perfiles
+-- Útil para buscadores de spots/amigos
+CREATE POLICY "Los perfiles son visibles para usuarios autenticados" 
+ON public."Perfiles" 
+FOR SELECT 
+TO authenticated 
+USING (true);
+
+-- 3. Regla para INSERTAR (INSERT)
+-- El usuario solo puede crear un perfil si el ID coincide con su ID de autenticación
+CREATE POLICY "Los usuarios solo crean su propio perfil" 
+ON public."Perfiles" 
+FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = id);
+
+-- 4. Regla para MODIFICAR (UPDATE)
+-- Solo el dueño del perfil (donde auth.uid() coincide con id) puede editar
+CREATE POLICY "Los usuarios solo editan su propio perfil" 
+ON public."Perfiles" 
+FOR UPDATE 
+TO authenticated 
+USING (auth.uid() = id) 
+WITH CHECK (auth.uid() = id);
+
+-- 5. Regla para ELIMINAR (DELETE)
+-- Solo el dueño del perfil puede borrar su cuenta
+CREATE POLICY "Los usuarios solo borran su propio perfil" 
+ON public."Perfiles" 
+FOR DELETE 
+TO authenticated 
+USING (auth.uid() = id);
+
+
+--  Trigger en la tabla de auth.users que crea un registro en la tabla public.Perfiles
+-- con el id,nombre y (email o telefono) para poder registrarse. Además de rol y avatar si los hay.
+-- En el caso de activar el registro mediante google o Apple tambien se permite.
+
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public."Perfiles" (id, email, nombre, rol, telefono, avatar_url)
+  values (
+    new.id, 
+    new.email, 
+     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', 'Usuario Nuevo'),
+    'usuario',
+    new.phone,
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+
+-- Inserción de spot
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Málaga', 'POINT(36.700271 -4.434400)', true, false, false, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Hoyo19', 'POINT(36.714971 -3.551889)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playa Granada', 'POINT(36.717905 -3.577939)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Salobreña', 'POINT(36.723753 -3.577939)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rules', 'POINT(36.871410 -3.482298)', false, false, true, true, false);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Torrox', 'POINT(36.735512 -3.987004)', false, true, true, true, false);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rincón de la Victoria', 'POINT(36.714105 -4.292650)', true, false, false, false, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Guadalmar', 'POINT(36.657960 -4.465166)', false, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playamar', 'POINT(36.633802 -4.486064)', false, false, true, true, true);
