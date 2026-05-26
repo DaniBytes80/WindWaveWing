@@ -10,8 +10,9 @@ class SpotManager extends ChangeNotifier {
   SpotManager._internal();
 
   final SpotBd _db = SpotBd();
-  List<String> favoritos = [];
   final supabase = Supabase.instance.client;
+
+  List<String> favoritos = [];
 
   List<Spot> _spots = [];
   List<Spot> get spots => _spots;
@@ -22,12 +23,16 @@ class SpotManager extends ChangeNotifier {
   List<ClimaModelo> _prediccionActual = [];
   List<ClimaModelo> get prediccionActual => _prediccionActual;
 
+  // -------------------------------------------------------------
   // 1. Cargar todos los spots
+  // -------------------------------------------------------------
   Future<void> inicializar() async {
     _spots = await _db.getTodosLosSpots();
   }
 
+  // -------------------------------------------------------------
   // 2. Seleccionar spot inicial
+  // -------------------------------------------------------------
   void seleccionarSpotInicial() {
     if (_spots.isEmpty) return;
 
@@ -42,15 +47,19 @@ class SpotManager extends ChangeNotifier {
     }
   }
 
+  // -------------------------------------------------------------
   // 3. Cargar predicción inicial
+  // -------------------------------------------------------------
   Future<void> cargarPrediccionInicial() async {
     if (_spotActual == null) return;
     await cargarPrediccion(_spotActual!.id);
   }
 
+  // -------------------------------------------------------------
   // 4. Cargar predicción de un spot
+  // -------------------------------------------------------------
   Future<void> cargarPrediccion(String spotId) async {
-    final datos = await _db.getClimaPorSpot(spotId); // ← UUID correcto
+    final datos = await _db.getClimaPorSpot(spotId);
 
     _prediccionActual = datos.map((json) {
       return ClimaModelo.fromJson(json);
@@ -59,14 +68,18 @@ class SpotManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  // -------------------------------------------------------------
   // 5. Cambiar spot
+  // -------------------------------------------------------------
   Future<void> cambiarSpot(Spot nuevoSpot) async {
     _spotActual = nuevoSpot;
     await cargarPrediccion(nuevoSpot.id);
     notifyListeners();
   }
 
+  // -------------------------------------------------------------
   // 6. Buscar spot en memoria
+  // -------------------------------------------------------------
   Spot? buscarSpot(String nombre) {
     try {
       return _spots.firstWhere(
@@ -77,8 +90,11 @@ class SpotManager extends ChangeNotifier {
     }
   }
 
+  // -------------------------------------------------------------
+  // 7. Cargar favoritos del usuario
+  // -------------------------------------------------------------
   Future<void> cargarFavoritos() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
     final data = await supabase
@@ -87,10 +103,15 @@ class SpotManager extends ChangeNotifier {
         .eq('perfil_id', user.id);
 
     favoritos = data.map<String>((e) => e['spot_id'] as String).toList();
+
+    notifyListeners(); // ⭐ AHORA LA UI SE ENTERA
   }
 
+  // -------------------------------------------------------------
+  // 8. Añadir o quitar favorito
+  // -------------------------------------------------------------
   Future<void> toggleFavorito(String spotId) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
     final existe = await supabase
@@ -101,14 +122,17 @@ class SpotManager extends ChangeNotifier {
         .maybeSingle();
 
     if (existe == null) {
+      // ⭐ Añadir favorito
       await supabase.from('favoritos_spots').insert({
         'perfil_id': user.id,
         'spot_id': spotId,
       });
     } else {
+      // ⭐ Quitar favorito
       await supabase.from('favoritos_spots').delete().eq('id', existe['id']);
     }
 
-    await cargarFavoritos();
+    await cargarFavoritos(); // Actualiza lista
+    notifyListeners(); // ⭐ Refresca UI (estrella incluida)
   }
 }

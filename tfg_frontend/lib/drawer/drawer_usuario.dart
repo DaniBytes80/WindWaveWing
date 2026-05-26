@@ -3,12 +3,11 @@ import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/views/mis_favoritos_page.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
-import 'package:tfg_clima_malaga/widgets/editar_perfil_dialog.dart'; // ⭐ IMPORTANTE
+import 'package:tfg_clima_malaga/widgets/editar_perfil_dialog.dart';
 
 class DrawerUsuario extends StatelessWidget {
   const DrawerUsuario({super.key});
 
-  // ⭐ AÑADE ESTA FUNCIÓN AQUÍ
   void _abrirEditarPerfil(BuildContext context) {
     showDialog(
       context: context,
@@ -28,24 +27,23 @@ class DrawerUsuario extends StatelessWidget {
       child: Align(
         alignment: Alignment.topLeft,
         child: Container(
-          margin: const EdgeInsets.only(top: 55),
-          width: 280,
-          padding: const EdgeInsets.all(20),
+          width: 180, // 🍏 ULTRAFINO
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 25),
           decoration: BoxDecoration(
-            color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
+            color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.92),
             borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(20),
-              bottomRight: Radius.circular(20),
+              topRight: Radius.circular(22),
+              bottomRight: Radius.circular(22),
             ),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // ⭐ AVATAR
+              // 🍏 AVATAR MINIMALISTA
               Center(
                 child: CircleAvatar(
-                  radius: 35,
+                  radius: 28,
                   backgroundColor: Colors.white24,
                   backgroundImage: avatarUrl != null
                       ? NetworkImage(avatarUrl)
@@ -54,54 +52,51 @@ class DrawerUsuario extends StatelessWidget {
                       ? Text(
                           nombre.isNotEmpty ? nombre[0].toUpperCase() : "U",
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: 26,
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         )
                       : null,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               Center(
                 child: Text(
                   "Hola, $nombre",
                   style: TextStyle(
                     color: EstilosWWW.colorLetra,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
 
               const SizedBox(height: 25),
 
-              // ⭐ ENLACES
-              _enlace(context, "Mi perfil", () {
-                _abrirEditarPerfil(context); // ⭐ YA FUNCIONA
+              // 🍏 ENLACES ESTILO APPLE
+              _item(context, Icons.person_outline, "Mi perfil", () {
+                _abrirEditarPerfil(context);
               }),
 
-              _enlace(context, "Mis favoritos", () async {
+              _item(context, Icons.star_border, "Mis favoritos", () async {
                 final spotSeleccionado = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const MisFavoritosPage()),
                 );
 
-                // Si el usuario selecciona un spot → actualizar spotActual
                 if (spotSeleccionado != null) {
                   SpotManager().cambiarSpot(spotSeleccionado);
                 }
               }),
 
-              _enlace(context, "Mis alertas", () {
-                // TODO
-              }),
+              _item(context, Icons.notifications_none, "Mis alertas", () {}),
 
               const SizedBox(height: 20),
 
-              _enlace(context, "Cerrar sesión", () async {
+              _item(context, Icons.logout, "Cerrar sesión", () async {
                 await UserManager().logout();
                 if (context.mounted) Navigator.pop(context);
               }),
@@ -112,18 +107,27 @@ class DrawerUsuario extends StatelessWidget {
     );
   }
 
-  Widget _enlace(BuildContext context, String texto, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Text(
-          texto,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            decoration: TextDecoration.underline,
-          ),
+  Widget _item(
+    BuildContext context,
+    IconData icono,
+    String texto,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icono, color: Colors.white70, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                texto,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
+          ],
         ),
       ),
     );
