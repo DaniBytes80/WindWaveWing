@@ -13,6 +13,8 @@ class PerfilBd {
     required String password,
     required String telefono,
     required Map<String, bool> deportes,
+    int? pesoKg,
+    bool notificacionesActivas = true,
   }) async {
     // 1. Crear usuario en Supabase Auth
     final AuthResponse res = await _supabase.auth.signUp(
@@ -21,7 +23,6 @@ class PerfilBd {
     );
 
     final String? idUsuario = res.user?.id;
-
     if (idUsuario == null) return null;
 
     // 2. Insertar perfil en la tabla Perfiles
@@ -34,43 +35,23 @@ class PerfilBd {
           'rol': 'USUARIO',
           'fecha_registro': DateTime.now().toIso8601String(),
           'telefono': telefono,
+
+          // Disciplinas
           'surf': deportes['Surf'] ?? false,
           'kite_surf': deportes['Kitesurf'] ?? false,
           'windsurf': deportes['Windsurf'] ?? false,
           'wing': deportes['Wingfoil'] ?? false,
-          'sail': deportes['Vela'] ?? false, // ← CORRECTO
+          'sail': deportes['Vela'] ?? false,
+
+          // Nuevos campos
+          'peso_kg': pesoKg,
+          'notificaciones_activas': notificacionesActivas,
+
           'avatar_url': null,
         })
         .select()
         .single();
 
     return Perfil.fromJson(data);
-  }
-
-  // ============================================================
-  // 2. Actualizar perfil por email
-  // ============================================================
-  Future<void> updateWithAll({
-    required String email,
-    String? nombre,
-    String? telefono,
-    Map<String, bool>? deportes,
-    String? avatarUrl,
-  }) async {
-    final Map<String, dynamic> updates = {};
-
-    if (nombre != null) updates['nombre'] = nombre;
-    if (telefono != null) updates['telefono'] = telefono;
-    if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
-
-    if (deportes != null) {
-      updates['surf'] = deportes['Surf'] ?? false;
-      updates['kite_surf'] = deportes['Kitesurf'] ?? false;
-      updates['windsurf'] = deportes['Windsurf'] ?? false;
-      updates['wing'] = deportes['Wingfoil'] ?? false;
-      updates['sail'] = deportes['Vela'] ?? false;
-    }
-
-    await _supabase.from("Perfiles").update(updates).eq('email', email);
   }
 }

@@ -18,14 +18,18 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
   late TextEditingController nombreCtrl;
   late TextEditingController telefonoCtrl;
   late TextEditingController avatarCtrl;
+  late TextEditingController pesoCtrl;
 
   bool surf = false;
   bool kite = false;
   bool wind = false;
   bool wing = false;
-  bool sail = false;
+  bool vela = false;
+
+  bool notificacionesActivas = true;
 
   File? imagenLocal;
+  bool _pickerActivo = false;
 
   @override
   void initState() {
@@ -36,22 +40,34 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     nombreCtrl = TextEditingController(text: user?.nombre ?? "");
     telefonoCtrl = TextEditingController(text: user?.telefono ?? "");
     avatarCtrl = TextEditingController(text: user?.avatarUrl ?? "");
+    pesoCtrl = TextEditingController(
+      text: user?.pesoKg != null ? user!.pesoKg.toString() : "",
+    );
 
     surf = user?.surf ?? false;
     kite = user?.kiteSurf ?? false;
     wind = user?.windsurf ?? false;
     wing = user?.wing ?? false;
-    sail = user?.sail ?? false;
+    vela = user?.sail ?? false;
+
+    notificacionesActivas = user?.notificacionesActivas ?? true;
   }
 
   Future<void> seleccionarImagen() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (_pickerActivo) return;
+    _pickerActivo = true;
 
-    if (picked != null) {
-      setState(() {
-        imagenLocal = File(picked.path);
-      });
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+
+      if (picked != null) {
+        setState(() {
+          imagenLocal = File(picked.path);
+        });
+      }
+    } finally {
+      _pickerActivo = false;
     }
   }
 
@@ -59,7 +75,7 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     if (imagenLocal == null) return null;
 
     final fileName =
-        "$userId-avatar-${DateTime.now().millisecondsSinceEpoch}.jpg";
+        "$userId/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg";
 
     await supabase.storage
         .from("avatars")
@@ -69,9 +85,16 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
           fileOptions: const FileOptions(upsert: true),
         );
 
-    final url = supabase.storage.from("avatars").getPublicUrl(fileName);
+    return supabase.storage.from("avatars").getPublicUrl(fileName);
+  }
 
-    return url;
+  Future<void> borrarAvatarDeStorage(String? url) async {
+    if (url == null || url.isEmpty) return;
+
+    try {
+      final path = url.split("/avatars/").last;
+      await supabase.storage.from("avatars").remove([path]);
+    } catch (_) {}
   }
 
   Future<void> guardar() async {
@@ -81,8 +104,18 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     String? avatarUrl = avatarCtrl.text.trim();
 
     if (imagenLocal != null) {
+      await borrarAvatarDeStorage(user.avatarUrl);
       avatarUrl = await subirImagenAStorage(user.id);
     }
+
+    if (imagenLocal == null && avatarCtrl.text.trim().isEmpty) {
+      await borrarAvatarDeStorage(user.avatarUrl);
+      avatarUrl = null;
+    }
+
+    final int? pesoKg = pesoCtrl.text.trim().isEmpty
+        ? null
+        : int.tryParse(pesoCtrl.text.trim());
 
     await supabase
         .from("Perfiles")
@@ -94,12 +127,28 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
           "kite_surf": kite,
           "windsurf": wind,
           "wing": wing,
-          "sail": sail,
+          "sail": vela,
+          "peso_kg": pesoKg,
+          "notificaciones_activas": notificacionesActivas,
           "rol": "USUARIO",
         })
         .eq("id", user.id);
 
-    await UserManager().cargarPerfilSiExiste();
+    final perfilActualizado = user.copyWith(
+      nombre: nombreCtrl.text.trim(),
+      telefono: telefonoCtrl.text.trim(),
+      avatarUrl: avatarUrl,
+      surf: surf,
+      kiteSurf: kite,
+      windsurf: wind,
+      wing: wing,
+      sail: vela,
+      pesoKg: pesoKg,
+      notificacionesActivas: notificacionesActivas,
+      rol: "USUARIO",
+    );
+
+    UserManager().actualizarPerfilLocal(perfilActualizado);
 
     if (!mounted) return;
 
@@ -107,7 +156,7 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Registros actualizados")));
+    ).showSnackBar(const SnackBar(content: Text("Perfil actualizado")));
   }
 
   @override
@@ -115,83 +164,184 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     return Dialog(
       backgroundColor: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ⭐ AVATAR
-            GestureDetector(
-              onTap: seleccionarImagen,
-              child: CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white24,
-                backgroundImage: imagenLocal != null
-                    ? FileImage(imagenLocal!)
-                    : (avatarCtrl.text.isNotEmpty
-                              ? NetworkImage(avatarCtrl.text)
-                              : null)
-                          as ImageProvider?,
-                child: (imagenLocal == null && avatarCtrl.text.isEmpty)
-                    ? const Icon(Icons.person, size: 40, color: Colors.white)
-                    : null,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-            const Text(
-              "Toca el avatar para cambiarlo",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: nombreCtrl,
-              style: TextStyle(color: EstilosWWW.colorLetra),
-              decoration: const InputDecoration(
-                labelText: "Nombre de usuario",
-                labelStyle: TextStyle(color: Colors.white70),
-              ),
-            ),
-
-            TextField(
-              controller: telefonoCtrl,
-              style: TextStyle(color: EstilosWWW.colorLetra),
-              decoration: const InputDecoration(
-                labelText: "Teléfono",
-                labelStyle: TextStyle(color: Colors.white70),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            _check("Surf", surf, (v) => setState(() => surf = v)),
-            _check("Kite Surf", kite, (v) => setState(() => kite = v)),
-            _check("Windsurf", wind, (v) => setState(() => wind = v)),
-            _check("Wing", wing, (v) => setState(() => wing = v)),
-            _check("Sail", sail, (v) => setState(() => sail = v)),
-
-            const SizedBox(height: 25),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Cancelar",
-                    style: TextStyle(color: Colors.white70),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ⭐ AVATAR + BOTÓN X
+              Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  GestureDetector(
+                    onTap: seleccionarImagen,
+                    child: CircleAvatar(
+                      key: ValueKey(avatarCtrl.text),
+                      radius: 30,
+                      backgroundColor: Colors.white24,
+                      backgroundImage: imagenLocal != null
+                          ? FileImage(imagenLocal!)
+                          : (avatarCtrl.text.isNotEmpty
+                                    ? NetworkImage(avatarCtrl.text)
+                                    : null)
+                                as ImageProvider?,
+                      child: (imagenLocal == null && avatarCtrl.text.isEmpty)
+                          ? const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
                   ),
+
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          imagenLocal = null;
+                          avatarCtrl.text = "";
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: nombreCtrl,
+                style: TextStyle(color: EstilosWWW.colorLetra),
+                decoration: const InputDecoration(
+                  labelText: "Nombre de usuario",
+                  labelStyle: TextStyle(color: Colors.white70),
                 ),
-                ElevatedButton(
-                  style: EstilosWWW.botonOscuro,
-                  onPressed: guardar,
-                  child: const Text("Aceptar"),
-                ),
-              ],
-            ),
-          ],
+              ),
+
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: telefonoCtrl,
+                      style: TextStyle(color: EstilosWWW.colorLetra),
+                      decoration: const InputDecoration(
+                        labelText: "Teléfono",
+                        labelStyle: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: pesoCtrl,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: EstilosWWW.colorLetra),
+                      decoration: const InputDecoration(
+                        labelText: "Peso (kg)",
+                        labelStyle: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _check("Surf", surf, (v) => setState(() => surf = v)),
+                        _check(
+                          "Windsurf",
+                          wind,
+                          (v) => setState(() => wind = v),
+                        ),
+                        _check("Vela", vela, (v) => setState(() => vela = v)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _check(
+                          "Kite Surf",
+                          kite,
+                          (v) => setState(() => kite = v),
+                        ),
+                        _check("Wing", wing, (v) => setState(() => wing = v)),
+
+                        Row(
+                          children: [
+                            const Text(
+                              "Notif.",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Switch(
+                              value: notificacionesActivas,
+                              onChanged: (v) =>
+                                  setState(() => notificacionesActivas = v),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              activeThumbColor: Colors.white,
+                              inactiveThumbColor: Colors.grey,
+                              inactiveTrackColor: Colors.white24,
+                              activeTrackColor: Colors.white38,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "Cancelar",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: EstilosWWW.botonOscuro,
+                    onPressed: guardar,
+                    child: const Text("Aceptar"),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -205,6 +355,7 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
       controlAffinity: ListTileControlAffinity.leading,
       activeColor: Colors.white,
       checkColor: Colors.black,
+      contentPadding: EdgeInsets.zero,
     );
   }
 }

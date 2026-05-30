@@ -8,6 +8,7 @@ class EstilosWWW {
     alpha: 0.6,
   );
   static const Color colorLetra = Colors.white;
+  static const Color colorLetraMenuMapa = Color.fromARGB(255, 0, 7, 35);
   static const Color colorEnlace = Colors.white70;
   static const Color colorBordeTabla = Colors.white24;
   static const Color colorError = Colors.redAccent;

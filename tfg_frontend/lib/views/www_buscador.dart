@@ -34,8 +34,9 @@ class WWWBuscador extends StatelessWidget {
 
       fieldViewBuilder:
           (context, fieldController, focusNode, onFieldSubmitted) {
+            // ⭐ Sincronización perfecta del texto y cursor
             if (fieldController.text != controller.text) {
-              fieldController.text = controller.text;
+              fieldController.value = controller.value;
             }
 
             return Container(
@@ -55,7 +56,6 @@ class WWWBuscador extends StatelessWidget {
                   hintText: "Buscar spot...",
                   hintStyle: TextStyle(color: Colors.white54),
                   prefixIcon: Icon(Icons.search, color: Colors.white70),
-                  suffixIcon: null, // solo quitamos la flecha
                 ),
               ),
             );
@@ -70,7 +70,9 @@ class WWWBuscador extends StatelessWidget {
               margin: const EdgeInsets.only(top: 5),
               decoration: BoxDecoration(
                 color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(15), // ⭐ encaja visualmente
+                ),
                 border: Border.all(color: Colors.white24),
               ),
               child: ListView.builder(

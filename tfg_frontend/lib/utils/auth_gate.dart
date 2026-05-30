@@ -36,8 +36,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _cargarTodo() async {
     await UserManager().cargarPerfilSiExiste();
     await SpotManager().inicializar();
-    SpotManager().seleccionarSpotInicial();
-    await SpotManager().cargarPrediccionInicial();
+
   }
 
   @override

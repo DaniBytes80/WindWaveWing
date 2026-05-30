@@ -27,10 +27,10 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
+
     try {
       await authService.signUpWithEmailPassword(email, password);
-      // ignore: use_build_context_synchronously
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -46,8 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min, // <--- AJUSTE INDISPENSABLE AL CONTENIDO
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               "Registrarse",
@@ -59,32 +58,30 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 20),
 
-            // Usamos tus campos de texto personalizados
             WWWWidgets.campoTexto(
               controller: _emailController,
               label: "Email",
               icono: Icons.email_outlined,
               tipoTeclado: TextInputType.emailAddress,
-              readOnly: true,
+              readOnly: false,
             ),
             WWWWidgets.campoTexto(
               controller: _passwordController,
               label: "Contraseña",
               icono: Icons.lock_outline,
               obscure: true,
-              readOnly: true,
+              readOnly: false,
             ),
             WWWWidgets.campoTexto(
               controller: _confirmPasswordController,
               label: "Confirmar contraseña",
               icono: Icons.lock_reset_outlined,
               obscure: true,
-              readOnly: true,
+              readOnly: false,
             ),
 
-            const SizedBox(height: 24.0),
+            const SizedBox(height: 24),
 
-            // Botones de acción
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

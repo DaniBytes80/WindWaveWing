@@ -11,61 +11,73 @@ class SpotBd {
 
   /// Obtiene todos los spots desde la tabla `spot`
   Future<List<Spot>> obtenerSpots() async {
-    final response = await _supabase
-        .from('spot')
-        .select('''
-          id,
-          nombre,
-          icono,
-          cam_url,
-          is_surf,
-          is_kitesurf,
-          is_windsurf,
-          is_wing,
-          is_sail,
-          created_at,
-          pointjson,
-          id_boya
-        ''')
-        .order('nombre');
+    try {
+      final response = await _supabase
+          .from('spot')
+          .select('''
+            id,
+            nombre,
+            icono,
+            cam_url,
+            is_surf,
+            is_kitesurf,
+            is_windsurf,
+            is_wing,
+            is_sail,
+            created_at,
+            pointjson,
+            id_boya
+          ''')
+          .order('nombre');
 
-    return response.map<Spot>((json) => Spot.fromJson(json)).toList();
+      return response.map<Spot>((json) => Spot.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Método que SpotManager espera
   Future<List<Map<String, dynamic>>> getClimaPorSpot(String spotId) async {
-    final response = await _supabase
-        .from('clima')
-        .select()
-        .eq('spot_id', spotId)
-        .order('fecha_hora');
+    try {
+      final response = await _supabase
+          .from('clima')
+          .select('*')
+          .eq('spot_id', spotId)
+          .order('fecha_hora');
 
-    return List<Map<String, dynamic>>.from(response);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Obtiene un spot por ID
   Future<Spot?> obtenerSpotPorId(String id) async {
-    final response = await _supabase
-        .from('spot')
-        .select('''
-          id,
-          nombre,
-          icono,
-          cam_url,
-          is_surf,
-          is_kitesurf,
-          is_windsurf,
-          is_wing,
-          is_sail,
-          created_at,
-          pointjson,
-          id_boya
-        ''')
-        .eq('id', id)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('spot')
+          .select('''
+            id,
+            nombre,
+            icono,
+            cam_url,
+            is_surf,
+            is_kitesurf,
+            is_windsurf,
+            is_wing,
+            is_sail,
+            created_at,
+            pointjson,
+            id_boya
+          ''')
+          .eq('id', id)
+          .maybeSingle();
 
-    if (response == null) return null;
+      if (response == null) return null;
 
-    return Spot.fromJson(response);
+      return Spot.fromJson(response);
+    } catch (e) {
+      return null;
+    }
   }
 }

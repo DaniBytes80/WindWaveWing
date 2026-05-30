@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
@@ -9,10 +13,18 @@ import 'package:tfg_clima_malaga/views/principal.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'configuration.dart';
 
+// ⭐ CLAVE GLOBAL PARA NAVEGACIÓN Y DIÁLOGOS
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await initializeDateFormatting('es_ES', null);
 
+  // ⭐ 1. Inicializar Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ⭐ 2. Inicializar Supabase
   await Supabase.initialize(
     url: Configuration.supabaseUrl,
     anonKey: Configuration.supabaseAnonKey,
@@ -27,6 +39,7 @@ class WindWaveWingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: EstilosWWW.colorFondoPantalla,
@@ -51,15 +64,18 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _inicializarApp() async {
-    // 1. Cargar spots
-    await SpotManager().inicializar();
-    SpotManager().seleccionarSpotInicial();
-    await SpotManager().cargarPrediccionInicial();
+    final spotManager = SpotManager();
+    final userManager = UserManager();
 
-    // 2. Cargar perfil si hay sesión (visitante si no)
-    await UserManager().cargarPerfilSiExiste();
+    // ⭐ 1. Cargar spots
+    await spotManager.inicializar();
 
-    // 3. Ir SIEMPRE a VentanaInicioUsuario
+    await spotManager.cargarFavoritos();
+
+    // ⭐ 2. Cargar perfil si existe
+    await userManager.cargarPerfilSiExiste();
+
+    // ⭐ 3. Ir SIEMPRE a VentanaInicioUsuario
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),

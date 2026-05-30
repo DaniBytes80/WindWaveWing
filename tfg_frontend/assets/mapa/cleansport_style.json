@@ -1,0 +1,29 @@
+{
+  "version": 8,
+  "name": "CleanSport Dark",
+  "sources": {
+    "osm": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#000718"
+      }
+    },
+    {
+      "id": "osm-tiles",
+      "type": "raster",
+      "source": "osm",
+      "minzoom": 0,
+      "maxzoom": 19
+    }
+  ]
+}

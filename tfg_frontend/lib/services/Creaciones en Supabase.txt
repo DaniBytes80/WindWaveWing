@@ -192,3 +192,114 @@ insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_win
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rincón de la Victoria', 'POINT(36.714105 -4.292650)', true, false, false, false, true);
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Guadalmar', 'POINT(36.657960 -4.465166)', false, true, true, true, true);
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playamar', 'POINT(36.633802 -4.486064)', false, false, true, true, true);
+
+
+-- Almacenamiento de imagenes como avatars
+-- En storage crear una carpeta File denominada avatas para almacenar todos los avatares de usarios. 
+-- Creación de políticas de archivos 
+create policy "Cualquiera puede ver los avatares"
+on storage.objects
+for select
+using (bucket_id = 'avatars');
+
+create policy "El usuario solo puede subir su propio avatar"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "El usuario solo puede actualizar su propio avatar"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+)
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "El usuario solo puede borrar su propio avatar"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create table public."AlertasUsuario" (
+    id uuid not null default gen_random_uuid(),
+    user_id uuid not null,
+    spot_id uuid not null,
+    
+    -- Condición meteorológica a evaluar
+    parametro text not null,          -- viento, racha, ola, direccion, periodo, etc.
+    operador text not null,           -- >, <, >=, <=, =
+    valor numeric not null,           -- valor numérico a comparar
+    
+    -- Opcional: material preferido para esta alerta
+    material_id uuid null,
+    
+    -- Estado de la alerta
+    activa boolean not null default true,
+    
+    -- Texto opcional para mostrar al usuario
+    nombre text null,
+    descripcion text null,
+    
+    fecha_creacion timestamp without time zone not null default now(),
+    
+    constraint AlertasUsuario_pkey primary key (id),
+    
+    constraint AlertasUsuario_user_id_fkey
+        foreign key (user_id) references "Perfiles" (id) on delete cascade,
+    
+    constraint AlertasUsuario_spot_id_fkey
+        foreign key (spot_id) references spot (id) on delete cascade,
+    
+    constraint AlertasUsuario_material_id_fkey
+        foreign key (material_id) references "MaterialUsuario" (id) on delete set null
+);
+
+create index if not exists idx_alertasusuario_user
+    on public."AlertasUsuario" (user_id);
+
+create index if not exists idx_alertasusuario_spot
+    on public."AlertasUsuario" (spot_id);
+
+create index if not exists idx_alertasusuario_parametro
+    on public."AlertasUsuario" (parametro);
+ alter table public."AlertasUsuario" enable row level security;
+create policy "Permitir lectura de alertas del usuario"
+on public."AlertasUsuario"
+for select
+to authenticated
+using (user_id = auth.uid());
+create policy "Permitir crear alertas propias"
+on public."AlertasUsuario"
+for insert
+to authenticated
+with check (user_id = auth.uid());
+create policy "Permitir actualizar alertas propias"
+on public."AlertasUsuario"
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+create policy "Permitir borrar alertas propias"
+on public."AlertasUsuario"
+for delete
+to authenticated
+using (user_id = auth.uid());
+create policy "Backend acceso total"
+on public."AlertasUsuario"
+for all
+to service_role
+using (true)
+with check (true);

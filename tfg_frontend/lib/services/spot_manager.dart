@@ -18,45 +18,44 @@ class SpotManager extends ChangeNotifier {
   List<Spot> get spots => _spots;
 
   Spot? _spotActual;
-  Spot get spotActual => _spotActual!;
+  Spot? get spotActual => _spotActual;
 
   List<ClimaModelo> _prediccionActual = [];
   List<ClimaModelo> get prediccionActual => _prediccionActual;
 
   // -------------------------------------------------------------
-  // 1. Cargar todos los spots
+  // INICIALIZACIÓN COMPLETA (llamar SIEMPRE al entrar logueado)
   // -------------------------------------------------------------
   Future<void> inicializar() async {
+    // 1️⃣ Cargar spots
     _spots = await _db.getTodosLosSpots();
-  }
 
-  // -------------------------------------------------------------
-  // 2. Seleccionar spot inicial
-  // -------------------------------------------------------------
-  void seleccionarSpotInicial() {
-    if (_spots.isEmpty) return;
-
-    try {
-      _spotActual = _spots.firstWhere(
-        (s) =>
-            s.nombre.toLowerCase().contains('málaga') ||
-            s.nombre.toLowerCase().contains('malaga'),
-      );
-    } catch (_) {
-      _spotActual = _spots.first;
+    // 2️⃣ Seleccionar spot inicial
+    if (_spots.isNotEmpty) {
+      try {
+        _spotActual = _spots.firstWhere(
+          (s) =>
+              s.nombre.toLowerCase().contains('málaga') ||
+              s.nombre.toLowerCase().contains('malaga'),
+        );
+      } catch (_) {
+        _spotActual = _spots.first;
+      }
     }
+
+    // 3️⃣ Cargar favoritos
+    await cargarFavoritos(silencioso: true);
+
+    // 4️⃣ Cargar predicción del spot inicial
+    if (_spotActual != null) {
+      await cargarPrediccion(_spotActual!.id);
+    }
+
+    notifyListeners();
   }
 
   // -------------------------------------------------------------
-  // 3. Cargar predicción inicial
-  // -------------------------------------------------------------
-  Future<void> cargarPrediccionInicial() async {
-    if (_spotActual == null) return;
-    await cargarPrediccion(_spotActual!.id);
-  }
-
-  // -------------------------------------------------------------
-  // 4. Cargar predicción de un spot
+  // Cargar predicción de un spot
   // -------------------------------------------------------------
   Future<void> cargarPrediccion(String spotId) async {
     final datos = await _db.getClimaPorSpot(spotId);
@@ -69,7 +68,7 @@ class SpotManager extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------
-  // 5. Cambiar spot
+  // Cambiar spot
   // -------------------------------------------------------------
   Future<void> cambiarSpot(Spot nuevoSpot) async {
     _spotActual = nuevoSpot;
@@ -78,7 +77,7 @@ class SpotManager extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------
-  // 6. Buscar spot en memoria
+  // Buscar spot
   // -------------------------------------------------------------
   Spot? buscarSpot(String nombre) {
     try {
@@ -91,9 +90,9 @@ class SpotManager extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------
-  // 7. Cargar favoritos del usuario
+  // Cargar favoritos
   // -------------------------------------------------------------
-  Future<void> cargarFavoritos() async {
+  Future<void> cargarFavoritos({bool silencioso = false}) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
@@ -104,11 +103,11 @@ class SpotManager extends ChangeNotifier {
 
     favoritos = data.map<String>((e) => e['spot_id'] as String).toList();
 
-    notifyListeners(); // ⭐ AHORA LA UI SE ENTERA
+    if (!silencioso) notifyListeners();
   }
 
   // -------------------------------------------------------------
-  // 8. Añadir o quitar favorito
+  // Añadir o quitar favorito
   // -------------------------------------------------------------
   Future<void> toggleFavorito(String spotId) async {
     final user = supabase.auth.currentUser;
@@ -122,17 +121,16 @@ class SpotManager extends ChangeNotifier {
         .maybeSingle();
 
     if (existe == null) {
-      // ⭐ Añadir favorito
       await supabase.from('favoritos_spots').insert({
         'perfil_id': user.id,
         'spot_id': spotId,
+        'notificaciones': true,
       });
     } else {
-      // ⭐ Quitar favorito
       await supabase.from('favoritos_spots').delete().eq('id', existe['id']);
     }
 
-    await cargarFavoritos(); // Actualiza lista
-    notifyListeners(); // ⭐ Refresca UI (estrella incluida)
+    await cargarFavoritos();
+    notifyListeners();
   }
 }

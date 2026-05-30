@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:tfg_clima_malaga/views/tema.dart';
 
 class WWWWidgets {
-  // Campo de texto inteligente: Configura el teclado según la necesidad
+  // ⭐ Campo de texto reutilizable
   static Widget campoTexto({
     required TextEditingController controller,
     required String label,
     required IconData icono,
     bool obscure = false,
     TextInputType tipoTeclado = TextInputType.text,
-    required bool readOnly, // <--- ESTO activa la @
+    bool readOnly = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        readOnly: readOnly,
         keyboardType: tipoTeclado,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
@@ -24,11 +26,15 @@ class WWWWidgets {
           enabledBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.white24),
           ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: EstilosWWW.colorLetra),
+          ),
         ),
       ),
     );
   }
 
+  // ⭐ SnackBar reutilizable (por si lo necesitas en otras pantallas)
   static void mostrarSnackBar(
     BuildContext context,
     String mensaje, {

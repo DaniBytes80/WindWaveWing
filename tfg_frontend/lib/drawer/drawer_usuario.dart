@@ -1,16 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/views/mis_favoritos_page.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'package:tfg_clima_malaga/widgets/editar_perfil_dialog.dart';
+import 'package:tfg_clima_malaga/views/principal.dart';
+import 'package:tfg_clima_malaga/main.dart';
 
-class DrawerUsuario extends StatelessWidget {
+// ⭐ IMPORTA TUS PÁGINAS REALES
+import 'package:tfg_clima_malaga/views/alertas/mis_alertas_page.dart';
+import 'package:tfg_clima_malaga/views/material/mis_materiales_page.dart';
+
+class DrawerUsuario extends StatefulWidget {
   const DrawerUsuario({super.key});
 
+  @override
+  State<DrawerUsuario> createState() => _DrawerUsuarioState();
+}
+
+class _DrawerUsuarioState extends State<DrawerUsuario> {
+  final userManager = UserManager();
+
+  @override
+  void initState() {
+    super.initState();
+    userManager.addListener(_onUserChanged);
+  }
+
+  @override
+  void dispose() {
+    userManager.removeListener(_onUserChanged);
+    super.dispose();
+  }
+
+  void _onUserChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _abrirEditarPerfil(BuildContext context) {
+    Navigator.pop(context);
+
     showDialog(
-      context: context,
+      context: navigatorKey.currentContext!,
       barrierColor: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.5),
       builder: (_) => const EditarPerfilDialog(),
     );
@@ -18,7 +48,7 @@ class DrawerUsuario extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = UserManager().usuario;
+    final user = userManager.usuario;
 
     final nombre = user?.nombre ?? "Usuario";
     final avatarUrl = user?.avatarUrl;
@@ -27,12 +57,12 @@ class DrawerUsuario extends StatelessWidget {
       child: Align(
         alignment: Alignment.topLeft,
         child: Container(
-          width: 180, // 🍏 ULTRAFINO
+          margin: const EdgeInsets.only(top: 55),
+          width: 160,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 25),
           decoration: BoxDecoration(
             color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.92),
             borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(22),
               bottomRight: Radius.circular(22),
             ),
           ),
@@ -40,15 +70,16 @@ class DrawerUsuario extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🍏 AVATAR MINIMALISTA
+              // ⭐ AVATAR
               Center(
                 child: CircleAvatar(
+                  key: ValueKey(avatarUrl),
                   radius: 28,
                   backgroundColor: Colors.white24,
-                  backgroundImage: avatarUrl != null
+                  backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
                       ? NetworkImage(avatarUrl)
                       : null,
-                  child: avatarUrl == null
+                  child: (avatarUrl == null || avatarUrl.isEmpty)
                       ? Text(
                           nombre.isNotEmpty ? nombre[0].toUpperCase() : "U",
                           style: const TextStyle(
@@ -65,7 +96,7 @@ class DrawerUsuario extends StatelessWidget {
 
               Center(
                 child: Text(
-                  "Hola, $nombre",
+                  " $nombre ",
                   style: TextStyle(
                     color: EstilosWWW.colorLetra,
                     fontSize: 16,
@@ -76,29 +107,57 @@ class DrawerUsuario extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // 🍏 ENLACES ESTILO APPLE
               _item(context, Icons.person_outline, "Mi perfil", () {
                 _abrirEditarPerfil(context);
               }),
 
               _item(context, Icons.star_border, "Mis favoritos", () async {
-                final spotSeleccionado = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MisFavoritosPage()),
+                Navigator.pop(context);
+
+                final spotSeleccionado = await showDialog(
+                  context: navigatorKey.currentContext!,
+                  barrierColor: Colors.transparent,
+                  builder: (_) => const MisFavoritosPage(),
                 );
 
                 if (spotSeleccionado != null) {
-                  SpotManager().cambiarSpot(spotSeleccionado);
+                  final state = navigatorKey.currentContext
+                      ?.findAncestorStateOfType<VentanaInicioUsuarioState>();
+
+                  state?.actualizarSpot(spotSeleccionado);
                 }
               }),
 
-              _item(context, Icons.notifications_none, "Mis alertas", () {}),
+              // ⭐ MIS ALERTAS
+              _item(
+                context,
+                Icons.notifications_active_outlined,
+                "Mis alertas",
+                () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    navigatorKey.currentContext!,
+                    MaterialPageRoute(builder: (_) => const MisAlertasPage()),
+                  );
+                },
+              ),
+
+              // ⭐ MI MATERIAL (TU PANTALLA REAL)
+              _item(context, Icons.inventory_2_outlined, "Mi material", () {
+                Navigator.pop(context);
+                Navigator.push(
+                  navigatorKey.currentContext!,
+                  MaterialPageRoute(builder: (_) => const MisMaterialesPage()),
+                );
+              }),
 
               const SizedBox(height: 20),
 
               _item(context, Icons.logout, "Cerrar sesión", () async {
-                await UserManager().logout();
-                if (context.mounted) Navigator.pop(context);
+                await userManager.logout();
+                if (navigatorKey.currentContext != null) {
+                  Navigator.pop(navigatorKey.currentContext!);
+                }
               }),
             ],
           ),

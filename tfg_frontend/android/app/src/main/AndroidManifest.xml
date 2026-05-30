@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:label="google_maps_in_flutter"
+        android:label="WindWaveWing"
         android:icon="@mipmap/ic_launcher">
 
 
@@ -30,8 +30,5 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- TODO: Add your Google Maps API key here -->
-        <meta-data android:name="com.google.android.geo.API_KEY"
-               android:value="AIzaSyAtMJsbg_Qke6yqfe8V1QNkte0LdXXQ1JE"/>
     </application>
 </manifest>

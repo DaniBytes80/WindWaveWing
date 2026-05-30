@@ -7,57 +7,98 @@ class MisFavoritosPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spotsFavoritos = SpotManager().spots
-        .where((s) => SpotManager().favoritos.contains(s.id))
+    final spotManager = SpotManager(); // ⭐ referencia única
+
+    final spotsFavoritos = spotManager.spots
+        .where((s) => spotManager.favoritos.contains(s.id))
         .toList();
 
-    return Scaffold(
-      backgroundColor: EstilosWWW.colorFondoPantalla.withValues(
-        alpha: 0.5,
-      ), // ⭐ 50% transparencia
-      body: Center(
-        child: Container(
-          width: 220, // estrecho, tipo menú
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: EstilosWWW.colorFondoPantalla,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // ⭐ alto según nº de spots
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Mis favoritos',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          // ⭐ Fondo semitransparente
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.5),
               ),
-              const SizedBox(height: 12),
-              ...spotsFavoritos.map(
-                (spot) => ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.star,
-                    color: Colors.yellow,
-                    size: 20,
-                  ),
-                  title: Text(
-                    spot.nombre,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () {
-                    SpotManager().cambiarSpot(spot); // ⭐ actualiza spotActual
-                    Navigator.pop(context, spot); // ⭐ devolvemos el spot
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // ⭐ Ventana centrada
+          Center(
+            child: Container(
+              width: 260,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ⭐ Título + botón X
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Mis favoritos',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ⭐ Si no hay favoritos
+                  if (spotsFavoritos.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        "No tienes favoritos aún",
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ),
+
+                  // ⭐ Lista de favoritos
+                  ...spotsFavoritos.map(
+                    (spot) => ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.star,
+                        color: Colors.yellow,
+                        size: 20,
+                      ),
+                      title: Text(
+                        spot.nombre,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context, spot); // ⭐ devolvemos el spot
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

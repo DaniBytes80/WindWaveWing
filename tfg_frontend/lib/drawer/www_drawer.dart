@@ -8,14 +8,21 @@ class WWWDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = UserManager().usuario;
+    final userManager = UserManager(); // ⭐ referencia única
 
-    return Drawer(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      child: user == null ? const DrawerVisitante() : const DrawerUsuario(),
+    return AnimatedBuilder(
+      animation: userManager, // ⭐ escucha cambios del perfil
+      builder: (context, _) {
+        final user = userManager.usuario;
+
+        return Drawer(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          child: user == null ? const DrawerVisitante() : const DrawerUsuario(),
+        );
+      },
     );
   }
 }

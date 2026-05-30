@@ -10,6 +10,8 @@ class WWWTablaClima extends StatelessWidget {
 
   const WWWTablaClima({super.key, required this.datosMeteorologicos});
 
+  double _kmhToKnots(double kmh) => kmh / 1.852;
+
   @override
   Widget build(BuildContext context) {
     if (datosMeteorologicos.isEmpty) {
@@ -39,13 +41,11 @@ class WWWTablaClima extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ⭐ COLUMNA FIJA
           Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
               Text(" ", style: TextStyle(color: Colors.white, fontSize: 12)),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -54,12 +54,11 @@ class WWWTablaClima extends StatelessWidget {
                     style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                   Text(
-                    "km/h",
+                    "knots",
                     style: TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
               ),
-
               Text("Ola", style: TextStyle(color: Colors.white, fontSize: 12)),
               Text(
                 "Lluvia",
@@ -70,7 +69,6 @@ class WWWTablaClima extends StatelessWidget {
 
           const SizedBox(width: 4),
 
-          // ⭐ TABLA DE DÍAS ESTRECHA
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -85,7 +83,7 @@ class WWWTablaClima extends StatelessWidget {
                     onTap: () =>
                         _mostrarBottomSheet(context, entry.value, fecha),
                     child: Container(
-                      width: 52, // ⭐ MÁS ESTRECHO
+                      width: 52,
                       margin: const EdgeInsets.symmetric(horizontal: 1),
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
@@ -97,7 +95,6 @@ class WWWTablaClima extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Día + fecha
                           Column(
                             children: [
                               Text(
@@ -118,7 +115,6 @@ class WWWTablaClima extends StatelessWidget {
                             ],
                           ),
 
-                          // ⭐ VIENTO (flecha + valor)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -141,7 +137,6 @@ class WWWTablaClima extends StatelessWidget {
                             ],
                           ),
 
-                          // Ola
                           Text(
                             "${resumen["ola"]}m",
                             style: const TextStyle(
@@ -150,7 +145,6 @@ class WWWTablaClima extends StatelessWidget {
                             ),
                           ),
 
-                          // Lluvia
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -197,6 +191,7 @@ class WWWTablaClima extends StatelessWidget {
       direcciones[c.direccionViento] =
           (direcciones[c.direccionViento] ?? 0) + 1;
     }
+
     final dirDominante = direcciones.entries
         .reduce((a, b) => a.value > b.value ? a : b)
         .key;
@@ -214,14 +209,13 @@ class WWWTablaClima extends StatelessWidget {
 
     return {
       "dir": dirDominante,
-      "viento": vientoMedio.toStringAsFixed(0),
+      "viento": _kmhToKnots(vientoMedio).toStringAsFixed(0),
       "ola": olaMedia.toStringAsFixed(1),
-      "lluvia": lluviaMedia.toStringAsFixed(0),
+      "lluvia": lluviaMedia.round(),
     };
   }
 
-  String _iconoLluvia(String porcentaje) {
-    final p = int.tryParse(porcentaje) ?? 0;
+  String _iconoLluvia(int p) {
     if (p == 0) return "☀️";
     if (p < 30) return "🌤️";
     if (p < 60) return "🌦️";
@@ -255,6 +249,15 @@ class WWWTablaClima extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               child: Column(
                 children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   Text(
                     "${_capitalizar(nombreDia)}  •  $numeroDia",
                     style: const TextStyle(
@@ -289,14 +292,14 @@ class WWWTablaClima extends StatelessWidget {
         formatoDia.format(listaOrdenada.first.fechaHora.toLocal()) ==
         formatoDia.format(ahora);
 
-    final listaFiltrada = esHoy
+    List<ClimaModelo> listaFiltrada = esHoy
         ? listaOrdenada
               .where((c) => c.fechaHora.toLocal().hour >= ahora.hour)
               .toList()
         : listaOrdenada;
 
     if (listaFiltrada.isEmpty) {
-      return const SizedBox.shrink();
+      listaFiltrada = listaOrdenada;
     }
 
     return SingleChildScrollView(
@@ -341,7 +344,7 @@ class WWWTablaClima extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        clima.velocidadViento.toStringAsFixed(0),
+                        _kmhToKnots(clima.velocidadViento).toStringAsFixed(0),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -362,7 +365,7 @@ class WWWTablaClima extends StatelessWidget {
               ...listaFiltrada.map(
                 (clima) => DataCell(
                   Text(
-                    clima.rachaViento.toStringAsFixed(0),
+                    _kmhToKnots(clima.rachaViento).toStringAsFixed(0),
                     style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
@@ -423,6 +426,15 @@ class WWWTablaClima extends StatelessWidget {
   }
 
   double _direccionToAngle(String direccion) {
+    final d = direccion.toUpperCase();
+
+    if (d == "VARIABLE" || d == "---") return 0;
+
+    if (d.contains("N") && d.contains("E")) return 45 * math.pi / 180;
+    if (d.contains("S") && d.contains("E")) return 135 * math.pi / 180;
+    if (d.contains("S") && d.contains("W")) return 225 * math.pi / 180;
+    if (d.contains("N") && d.contains("W")) return 315 * math.pi / 180;
+
     final mapa = {
       "N": 0,
       "NE": 45,
@@ -433,10 +445,13 @@ class WWWTablaClima extends StatelessWidget {
       "W": 270,
       "NW": 315,
     };
-    final grados = mapa[direccion.toUpperCase()] ?? 0;
+
+    final grados = mapa[d] ?? 0;
     return grados * math.pi / 180;
   }
 
-  String _capitalizar(String texto) =>
-      texto[0].toUpperCase() + texto.substring(1);
+  String _capitalizar(String texto) {
+    if (texto.isEmpty) return texto;
+    return texto[0].toUpperCase() + texto.substring(1);
+  }
 }

@@ -12,6 +12,9 @@ class Perfil {
   final bool wing;
   final bool sail;
 
+  final int? pesoKg;
+  final bool notificacionesActivas;
+
   final String? avatarUrl;
 
   Perfil({
@@ -26,6 +29,8 @@ class Perfil {
     required this.windsurf,
     required this.wing,
     required this.sail,
+    required this.pesoKg,
+    required this.notificacionesActivas,
     required this.avatarUrl,
   });
 
@@ -45,6 +50,8 @@ class Perfil {
       windsurf: json['windsurf'] ?? false,
       wing: json['wing'] ?? false,
       sail: json['sail'] ?? false,
+      pesoKg: json['peso_kg'],
+      notificacionesActivas: json['notificaciones_activas'] ?? true,
       avatarUrl: json['avatar_url'],
     );
   }
@@ -65,6 +72,8 @@ class Perfil {
       'windsurf': windsurf,
       'wing': wing,
       'sail': sail,
+      'peso_kg': pesoKg,
+      'notificaciones_activas': notificacionesActivas,
       'avatar_url': avatarUrl,
     };
   }
@@ -75,19 +84,21 @@ class Perfil {
   Perfil copyWith({
     String? nombre,
     String? telefono,
+    String? rol,
     bool? surf,
     bool? kiteSurf,
     bool? windsurf,
     bool? wing,
     bool? sail,
+    int? pesoKg,
+    bool? notificacionesActivas,
     String? avatarUrl,
-    bool? vela,
   }) {
     return Perfil(
       id: id,
       nombre: nombre ?? this.nombre,
       email: email,
-      rol: rol,
+      rol: rol ?? this.rol,
       fechaRegistro: fechaRegistro,
       telefono: telefono ?? this.telefono,
       surf: surf ?? this.surf,
@@ -95,6 +106,9 @@ class Perfil {
       windsurf: windsurf ?? this.windsurf,
       wing: wing ?? this.wing,
       sail: sail ?? this.sail,
+      pesoKg: pesoKg ?? this.pesoKg,
+      notificacionesActivas:
+          notificacionesActivas ?? this.notificacionesActivas,
       avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
