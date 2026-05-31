@@ -8,7 +8,6 @@ import 'package:tfg_clima_malaga/views/www_tabla_clima.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/drawer/www_drawer.dart';
-
 import 'package:tfg_clima_malaga/views/menu_animado.dart';
 
 class VentanaInicioUsuario extends StatefulWidget {
@@ -45,56 +44,91 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
     }
   }
 
-  // ⭐ SE EJECUTA SOLO CUANDO EL ESTILO ESTÁ LISTO
-  Future<void> _pintarMarcadoresIniciales() async {
+  // ⭐ CLUSTERING SEGURO (sin interacción)
+  Future<void> _pintarClusters() async {
     if (mapController == null) return;
-
-    final bytes = await rootBundle.load('assets/images/pointSurf.png');
-    final list = bytes.buffer.asUint8List();
-
-    await mapController!.addImage('spot-icon', list);
 
     final spots = SpotManager().spots;
 
-    for (final s in spots) {
-      await mapController!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(s.lat, s.lng),
-          iconImage: 'spot-icon',
-          iconSize: 0.40,
-        ),
-      );
-    }
+    final geojson = {
+      "type": "FeatureCollection",
+      "features": spots.map((s) {
+        return {
+          "type": "Feature",
+          "properties": {"id": s.id, "nombre": s.nombre},
+          "geometry": {
+            "type": "Point",
+            "coordinates": [s.lng, s.lat],
+          },
+        };
+      }).toList(),
+    };
+
+    final bytes = await rootBundle.load('assets/images/pointSurf.png');
+    final list = bytes.buffer.asUint8List();
+    await mapController!.addImage('spot-icon', list);
+
+    await mapController!.addSource(
+      "spots",
+      GeojsonSourceProperties(
+        data: geojson,
+        cluster: true,
+        clusterRadius: 60,
+        clusterMaxZoom: 14,
+      ),
+    );
+
+    await mapController!.addLayer(
+      "spots",
+      "cluster-layer",
+      CircleLayerProperties(
+        circleColor: "#00c8ff",
+        circleRadius: 22,
+        circleOpacity: 0.75,
+      ),
+    );
+
+    await mapController!.addLayer(
+      "spots",
+      "cluster-count",
+      SymbolLayerProperties(
+        textField: "{point_count}",
+        textColor: "#ffffff",
+        textSize: 14,
+      ),
+    );
+
+    await mapController!.addLayer(
+      "spots",
+      "spot-layer",
+      SymbolLayerProperties(
+        iconImage: "spot-icon",
+        iconSize: 0.55,
+        iconAllowOverlap: true,
+      ),
+      belowLayerId: "cluster-layer",
+    );
   }
 
-  // ⭐ CAMBIAR SPOT
   Future<void> actualizarSpot(Spot spotEncontrado) async {
     final spotManager = SpotManager();
-
     await spotManager.cambiarSpot(spotEncontrado);
 
     if (mounted && mapController != null) {
-      mapController!.moveCamera(
+      mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
             target: LatLng(spotEncontrado.lat, spotEncontrado.lng),
-            zoom: 12.5,
+            zoom: 13.5,
+            tilt: 55,
+            bearing: 30,
           ),
-        ),
-      );
-
-      await mapController!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(spotEncontrado.lat, spotEncontrado.lng),
-          iconImage: 'spot-icon',
-          iconSize: 0.60,
         ),
       );
     }
 
     FocusScope.of(context).unfocus();
     _controllerBuscador.clear();
-
     setState(() {});
   }
 
@@ -122,7 +156,6 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
           behavior: HitTestBehavior.translucent,
           onTap: () => userManager.actividadDetectada(),
           onPanDown: (_) => userManager.actividadDetectada(),
-
           child: Scaffold(
             appBar: AppBar(
               backgroundColor: EstilosWWW.colorFondoPantalla,
@@ -146,35 +179,45 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                 ],
               ),
             ),
-
             drawer: const WWWDrawer(),
-
             body: Stack(
               children: [
-                // ⭐ MAPA MAPLIBRE
+                // ⭐ MAPA MAPLIBRE ANIMADO + CLUSTERING
                 MapLibreMap(
-                  styleString: 'assets/mapa/cleansport_style.json',
+                  styleString:
+                      'assets/mapa/windwave_ocean_premium.json', // ← CORREGIDO
                   initialCameraPosition: CameraPosition(
                     target: LatLng(spotActual.lat, spotActual.lng),
                     zoom: 11.5,
+                    tilt: 40,
+                    bearing: 20,
                   ),
-
-                  // ⭐ AQUÍ ESTÁ LA CLAVE: onStyleLoaded
                   onMapCreated: (controller) {
                     mapController = controller;
-                  },
 
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (mapController == null) return;
+                      mapController!.animateCamera(
+                        CameraUpdate.newCameraPosition(
+                          CameraPosition(
+                            target: LatLng(spotActual.lat, spotActual.lng),
+                            zoom: 12.5,
+                            tilt: 55,
+                            bearing: 45,
+                          ),
+                        ),
+                      );
+                    });
+                  },
                   onStyleLoadedCallback: () async {
-                    await _pintarMarcadoresIniciales();
+                    await _pintarClusters();
                   },
-
                   rotateGesturesEnabled: true,
                   scrollGesturesEnabled: true,
                   tiltGesturesEnabled: true,
                   zoomGesturesEnabled: true,
                 ),
 
-                // ⭐ BUSCADOR
                 Positioned(
                   top: 15,
                   left: 15,
@@ -200,7 +243,6 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                   ),
                 ),
 
-                // ⭐ BOTÓN DEL MENÚ DEL MAPA
                 Positioned(
                   top: 10,
                   right: 5,
@@ -221,10 +263,8 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                   ),
                 ),
 
-                // ⭐ MENÚ ANIMADO
                 MenuAnimado(abierto: menuAbierto, onClose: toggleMenu),
 
-                // ⭐ TABLA CLIMA
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(

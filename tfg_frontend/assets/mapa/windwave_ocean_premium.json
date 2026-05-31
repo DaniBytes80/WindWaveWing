@@ -1,0 +1,62 @@
+{
+  "version": 8,
+  "name": "WindWave Ocean Premium",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+
+  "sources": {
+    "osm": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256
+    }
+  },
+
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#00121d"
+      }
+    },
+
+    {
+      "id": "ocean-base",
+      "type": "raster",
+      "source": "osm",
+      "paint": {
+        "raster-opacity": 1.0,
+        "raster-saturation": -0.35,
+        "raster-brightness-min": 0.30,
+        "raster-brightness-max": 0.95
+      }
+    },
+
+    {
+      "id": "landmask",
+      "type": "background",
+      "paint": {
+        "background-color": "#0b1f2a"
+      }
+    },
+
+    {
+      "id": "labels",
+      "type": "symbol",
+      "source": "osm",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 12,
+        "text-font": ["Open Sans Regular"],
+        "text-offset": [0, 0.6]
+      },
+      "paint": {
+        "text-color": "#d8f3ff",
+        "text-halo-color": "#00121d",
+        "text-halo-width": 1.2
+      }
+    }
+  ]
+}

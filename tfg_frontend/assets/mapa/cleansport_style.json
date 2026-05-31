@@ -1,6 +1,8 @@
 {
   "version": 8,
-  "name": "CleanSport Dark",
+  "name": "CleanSport Base Style",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+
   "sources": {
     "osm": {
       "type": "raster",
@@ -10,20 +12,25 @@
       "tileSize": 256
     }
   },
+
   "layers": [
     {
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#000718"
+        "background-color": "#00111a"
       }
     },
     {
-      "id": "osm-tiles",
+      "id": "osm-layer",
       "type": "raster",
       "source": "osm",
-      "minzoom": 0,
-      "maxzoom": 19
+      "paint": {
+        "raster-opacity": 0.90,
+        "raster-saturation": -0.20,
+        "raster-brightness-min": 0.40,
+        "raster-brightness-max": 0.95
+      }
     }
   ]
 }

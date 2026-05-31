@@ -84,9 +84,7 @@ class _MisAlertasPageState extends State<MisAlertasPage> {
             context,
             MaterialPageRoute(builder: (_) => const CrearAlertaPage()),
           ).then((creada) {
-            if (creada == true) {
-              _cargarAlertas();
-            }
+            if (creada == true) _cargarAlertas();
           });
         },
         child: const Icon(Icons.add),
@@ -132,55 +130,100 @@ class _MisAlertasPageState extends State<MisAlertasPage> {
   }
 
   Widget _buildAlertaCard(Alerta a) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 4,
-        ), // 👈 reduce altura
-        visualDensity: const VisualDensity(
-          vertical: -3,
-        ), // 👈 compacta el ListTile
+    // ⭐ Variable local mutable para animación
+    bool estadoVisual = a.activa;
 
-        leading: Icon(
-          Icons.notifications_active,
-          size: 32, // 👈 antes 40, reduce altura total
-          color: a.activa
-              ? EstilosWWW.colorLetraMenuMapa
-              : EstilosWWW.colorError,
-        ),
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 4,
+            ),
+            visualDensity: const VisualDensity(vertical: -3),
 
-        title: Text(
-          a.nombre ?? "Alerta sin nombre",
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+            // ⭐ CAMPANA ANIMADA + AMARILLA
+            leading: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.0, end: estadoVisual ? 1.0 : 0.9),
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              builder: (context, scale, child) {
+                return GestureDetector(
+                  onTap: () async {
+                    final nuevoEstado = !estadoVisual;
 
-        subtitle: Text(
-          "Disciplina: ${a.disciplina ?? '-'}",
-          style: const TextStyle(fontSize: 13),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+                    // Shake animation
+                    for (int i = 0; i < 3; i++) {
+                      await Future.delayed(const Duration(milliseconds: 40));
+                      setLocalState(() {});
+                    }
 
-        // 👇 MUY IMPORTANTE: elimina la altura extra
-        isThreeLine: false,
-        minVerticalPadding: 0,
+                    // Actualizamos solo la UI local
+                    setLocalState(() {
+                      estadoVisual = nuevoEstado;
+                    });
 
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Switch(
-              value: a.activa,
-              onChanged: (v) async {
-                await _service.cambiarEstadoAlerta(a.id, v);
-                _cargarAlertas();
+                    // Actualizamos Supabase
+                    await _service.cambiarEstadoAlerta(a.id, nuevoEstado);
+
+                    // Recargamos lista completa
+                    _cargarAlertas();
+                  },
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([]),
+                    builder: (context, _) {
+                      final shake = estadoVisual
+                          ? 0.0
+                          : (DateTime.now().millisecond % 100 < 50
+                                ? -1.5
+                                : 1.5);
+
+                      return Transform.translate(
+                        offset: Offset(shake, 0),
+                        child: Transform.scale(
+                          scale: scale,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            transitionBuilder: (child, anim) =>
+                                ScaleTransition(scale: anim, child: child),
+                            child: Icon(
+                              estadoVisual
+                                  ? Icons.notifications_active
+                                  : Icons.notifications_off,
+                              key: ValueKey(estadoVisual),
+                              size: 32,
+                              color: estadoVisual
+                                  ? EstilosWWW
+                                        .colorCampana // ⭐ AMARILLO
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
-              materialTapTargetSize:
-                  MaterialTapTargetSize.shrinkWrap, // 👈 más pequeño
             ),
 
-            PopupMenuButton<String>(
+            title: Text(
+              a.nombre ?? "Alerta sin nombre",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+
+            subtitle: Text(
+              "Disciplina: ${a.disciplina ?? '-'}",
+              style: const TextStyle(fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            isThreeLine: false,
+            minVerticalPadding: 0,
+
+            trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 20),
               onSelected: (value) async {
                 if (value == 'editar') {
@@ -221,9 +264,9 @@ class _MisAlertasPageState extends State<MisAlertasPage> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

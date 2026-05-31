@@ -26,6 +26,7 @@ dependencies:
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
   maplibre_gl: ^0.26.1
+  local_auth: ^3.0.1
 
 
 dev_dependencies:
@@ -34,15 +35,19 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
 
+
 flutter:
 
   uses-material-design: true
   assets:
     - assets/images/wwwIntro.png
     - assets/images/wwwIcono2.png
-    - assets/mapa/cleansport_style.json
+
     - assets/images/pointSurf.png
     - assets/images/icoViento.gif
     - assets/images/icoOla.gif
     - assets/images/icoTemperatura.gif
     - assets/images/icoLluvia.gif
+
+    - assets/mapa/cleansport_style.json
+    - assets/mapa/windwave_ocean_premium.json

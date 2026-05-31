@@ -12,6 +12,7 @@ class EstilosWWW {
   static const Color colorEnlace = Colors.white70;
   static const Color colorBordeTabla = Colors.white24;
   static const Color colorError = Colors.redAccent;
+  static const Color colorCampana = Color.fromARGB(201, 206, 185, 1);
 
   // Estilos de texto (Como si fueran clases CSS)
   static const TextStyle tituloApp = TextStyle(

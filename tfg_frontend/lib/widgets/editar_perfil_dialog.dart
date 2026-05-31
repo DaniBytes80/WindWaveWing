@@ -101,6 +101,46 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     final user = UserManager().usuario;
     if (user == null) return;
 
+    // ============================================================
+    // VALIDACIONES
+    // ============================================================
+
+    final nombre = nombreCtrl.text.trim();
+    final telefono = telefonoCtrl.text.trim();
+    final pesoTexto = pesoCtrl.text.trim();
+
+    // Nombre obligatorio
+    if (nombre.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("El nombre no puede estar vacío.")),
+      );
+      return;
+    }
+
+    // Teléfono numérico o vacío
+    if (telefono.isNotEmpty && !RegExp(r'^[0-9]+$').hasMatch(telefono)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("El teléfono solo puede contener números."),
+        ),
+      );
+      return;
+    }
+
+    // Peso numérico o vacío
+    final int? pesoKg = pesoTexto.isEmpty ? null : int.tryParse(pesoTexto);
+
+    if (pesoTexto.isNotEmpty && pesoKg == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("El peso debe ser un número válido.")),
+      );
+      return;
+    }
+
+    // ============================================================
+    // AVATAR
+    // ============================================================
+
     String? avatarUrl = avatarCtrl.text.trim();
 
     if (imagenLocal != null) {
@@ -113,15 +153,15 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
       avatarUrl = null;
     }
 
-    final int? pesoKg = pesoCtrl.text.trim().isEmpty
-        ? null
-        : int.tryParse(pesoCtrl.text.trim());
+    // ============================================================
+    // GUARDAR EN SUPABASE
+    // ============================================================
 
     await supabase
         .from("Perfiles")
         .update({
-          "nombre": nombreCtrl.text.trim(),
-          "telefono": telefonoCtrl.text.trim(),
+          "nombre": nombre,
+          "telefono": telefono,
           "avatar_url": avatarUrl,
           "surf": surf,
           "kite_surf": kite,
@@ -135,8 +175,8 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
         .eq("id", user.id);
 
     final perfilActualizado = user.copyWith(
-      nombre: nombreCtrl.text.trim(),
-      telefono: telefonoCtrl.text.trim(),
+      nombre: nombre,
+      telefono: telefono,
       avatarUrl: avatarUrl,
       surf: surf,
       kiteSurf: kite,

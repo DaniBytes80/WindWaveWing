@@ -4,6 +4,7 @@ import 'package:tfg_clima_malaga/services/auth_service.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/views/register_page.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/utils/validadores.dart';
 
 class DrawerVisitante extends StatefulWidget {
   const DrawerVisitante({super.key});
@@ -17,18 +18,35 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
+  // ============================================================
+  // LOGIN EMAIL
+  // ============================================================
   void login() async {
-    try {
-      await authService.signInWithEmailPassword(
-        _email.text.trim(),
-        _password.text.trim(),
-      );
+    final email = _email.text.trim();
+    final password = _password.text.trim();
 
-      // ⭐ Cargar perfil del usuario
+    // VALIDAR EMAIL
+    if (!Validadores.esEmailValido(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Introduce un email válido.")),
+      );
+      return;
+    }
+
+    // VALIDAR CONTRASEÑA
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Introduce tu contraseña.")));
+      return;
+    }
+
+    try {
+      await authService.signInWithEmailPassword(email, password);
+
       await UserManager().cargarPerfilSiExiste();
 
       if (!mounted) return;
-
       Navigator.pop(context); // Cierra el Drawer
     } catch (e) {
       if (!mounted) return;
@@ -39,8 +57,31 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
     }
   }
 
+  // ============================================================
+  // LOGIN GOOGLE
+  // ============================================================
+  void loginGoogle() async {
+    Navigator.pop(context); // Cierra el Drawer antes del login
+    await authService.signInWithGoogle();
+  }
+
+  // ============================================================
+  // LOGIN BIOMETRÍA
+  // ============================================================
+  void loginBiometria() async {
+    Navigator.pop(context); // Cierra el Drawer antes del login
+
+    final ok = await authService.signInWithBiometrics();
+    if (!ok) return;
+
+    await UserManager().cargarPerfilSiExiste();
+  }
+
+  // ============================================================
+  // ABRIR REGISTRO
+  // ============================================================
   void abrirRegistro() {
-    Navigator.pop(context); // ⭐ Cierra el Drawer (login)
+    Navigator.pop(context); // Cierra el Drawer
 
     Future.delayed(const Duration(milliseconds: 150), () {
       showDialog(
@@ -59,6 +100,27 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
     });
   }
 
+  // ============================================================
+  // ICONO SOCIAL REDONDO
+  // ============================================================
+  Widget socialIcon({required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18, color: Colors.white),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -79,6 +141,7 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // EMAIL
               TextField(
                 controller: _email,
                 style: TextStyle(color: EstilosWWW.colorLetra),
@@ -87,6 +150,8 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
                   labelStyle: TextStyle(color: Colors.white70),
                 ),
               ),
+
+              // PASSWORD
               TextField(
                 controller: _password,
                 obscureText: true,
@@ -96,13 +161,31 @@ class _DrawerVisitanteState extends State<DrawerVisitante> {
                   labelStyle: TextStyle(color: Colors.white70),
                 ),
               ),
+
               const SizedBox(height: 16),
+
+              // BOTÓN ACCESO EMAIL
               ElevatedButton(
                 style: EstilosWWW.botonOscuro,
                 onPressed: login,
                 child: const Text("Acceso"),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 18),
+
+              // ICONOS SOCIALES (GOOGLE + BIOMETRÍA)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  socialIcon(icon: Icons.g_mobiledata, onTap: loginGoogle),
+                  const SizedBox(width: 18),
+                  socialIcon(icon: Icons.fingerprint, onTap: loginBiometria),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              // REGISTRO
               Center(
                 child: Text.rich(
                   TextSpan(

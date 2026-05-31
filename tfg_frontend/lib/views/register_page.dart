@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/auth_service.dart';
 import 'package:tfg_clima_malaga/views/tema.dart';
 import 'package:tfg_clima_malaga/views/www_widgets.dart';
+import 'package:tfg_clima_malaga/utils/validadores.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,17 +18,50 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmPasswordController = TextEditingController();
 
   void signUp() async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (password != confirmPassword) {
+    // ============================================================
+    // VALIDACIONES
+    // ============================================================
+
+    // EMAIL
+    if (!Validadores.esEmailValido(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Las contraseña no coincide.")),
+        const SnackBar(content: Text("Introduce un email válido.")),
       );
       return;
     }
 
+    // CONTRASEÑA SEGURA
+    if (!Validadores.esContrasenaSegura(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "La contraseña debe tener:\n"
+            "- 8 caracteres\n"
+            "- 1 mayúscula\n"
+            "- 1 minúscula\n"
+            "- 1 número\n"
+            "- 1 carácter especial (!@#\$&*~)",
+          ),
+        ),
+      );
+      return;
+    }
+
+    // CONFIRMAR CONTRASEÑA
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Las contraseñas no coinciden.")),
+      );
+      return;
+    }
+
+    // ============================================================
+    // REGISTRO
+    // ============================================================
     try {
       await authService.signUpWithEmailPassword(email, password);
       if (mounted) Navigator.pop(context);
@@ -35,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+        ).showSnackBar(SnackBar(content: Text("Error al registrar: $e")));
       }
     }
   }
@@ -58,6 +92,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 20),
 
+            // EMAIL
             WWWWidgets.campoTexto(
               controller: _emailController,
               label: "Email",
@@ -65,6 +100,8 @@ class _RegisterPageState extends State<RegisterPage> {
               tipoTeclado: TextInputType.emailAddress,
               readOnly: false,
             ),
+
+            // CONTRASEÑA
             WWWWidgets.campoTexto(
               controller: _passwordController,
               label: "Contraseña",
@@ -72,6 +109,8 @@ class _RegisterPageState extends State<RegisterPage> {
               obscure: true,
               readOnly: false,
             ),
+
+            // CONFIRMAR CONTRASEÑA
             WWWWidgets.campoTexto(
               controller: _confirmPasswordController,
               label: "Confirmar contraseña",

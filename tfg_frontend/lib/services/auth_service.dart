@@ -1,11 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:local_auth/local_auth.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ============================================================
-  // 1. Login con email y contraseña
-  // ============================================================
+  // LOGIN EMAIL
   Future<AuthResponse> signInWithEmailPassword(
     String email,
     String password,
@@ -16,9 +15,7 @@ class AuthService {
     );
   }
 
-  // ============================================================
-  // 2. Registro en Supabase Auth (NO crea perfil)
-  // ============================================================
+  // REGISTRO EMAIL
   Future<AuthResponse> signUpWithEmailPassword(
     String email,
     String password,
@@ -26,29 +23,42 @@ class AuthService {
     return await _supabase.auth.signUp(email: email, password: password);
   }
 
-  // ============================================================
-  // 3. Reset de contraseña
-  // ============================================================
+  // RESET PASSWORD
   Future<void> resetPassword(String email) async {
-    try {
-      await _supabase.auth.resetPasswordForEmail(email);
-    } catch (e) {
-      throw Exception("Error al enviar recuperación: $e");
-    }
+    await _supabase.auth.resetPasswordForEmail(email);
   }
 
-  // ============================================================
-  // 4. Logout
-  // ============================================================
+  // LOGOUT
   Future<void> logout() async {
     await _supabase.auth.signOut();
   }
 
-  // ============================================================
-  // 5. Obtener email del usuario actual
-  // ============================================================
+  // EMAIL ACTUAL
   String? getCurrentUserEmail() {
     final session = _supabase.auth.currentSession;
     return session?.user.email;
+  }
+
+  // GOOGLE
+  Future<void> signInWithGoogle() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: "com.windwavewing.app://login-callback",
+    );
+  }
+
+  // BIOMETRÍA
+  Future<bool> signInWithBiometrics() async {
+    final auth = LocalAuthentication();
+
+    final canCheck = await auth.canCheckBiometrics;
+    if (!canCheck) return false;
+
+    final didAuth = await auth.authenticate(
+      localizedReason: "Accede con tu huella o FaceID",
+      biometricOnly: true,
+    );
+
+    return didAuth;
   }
 }

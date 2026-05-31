@@ -1,95 +1,119 @@
-import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/material.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:tfg_clima_malaga/models/spot.dart';
+import 'package:tfg_clima_malaga/views/mapa/mapa_fuentes.dart';
+
+/// ===============================================================
+///   CONTROLADOR DE CAPAS METEOROLÓGICAS (compatible MapLibre 0.26)
+/// ===============================================================
+///
+///  - Recarga dinámica de tiles eliminando y recreando fuentes
+///  - Capas: viento, olas, temperatura, lluvia
+///  - Opacidad estilo Windy (0.85)
+///  - Visibilidad correcta ("visible" / "none")
+///
+/// ===============================================================
 
 class MapaCapas {
   final MapLibreMapController controller;
 
   MapaCapas(this.controller);
 
-  // ⭐ Inicializa todas las capas (las crea pero ocultas)
+  // ---------------------------------------------------------------
+  //  Inicializa las capas (vacías y ocultas)
+  // ---------------------------------------------------------------
   Future<void> inicializarCapas() async {
+    await _crearFuenteYCapa("viento");
+    await _crearFuenteYCapa("olas");
+    await _crearFuenteYCapa("temperatura");
+    await _crearFuenteYCapa("lluvia");
+  }
+
+  // ---------------------------------------------------------------
+  //  Crea una fuente + capa vacía (tiles = [])
+  // ---------------------------------------------------------------
+  Future<void> _crearFuenteYCapa(String variable) async {
+    final sourceId = "$variable-source";
+    final layerId = "$variable-layer";
+
     try {
-      // Capa de viento (vector tiles o raster)
+      // Si ya existen, las eliminamos
+      await controller.removeLayer(layerId).catchError((_) {});
+      await controller.removeSource(sourceId).catchError((_) {});
+
+      // Creamos la fuente vacía
       await controller.addSource(
-        "viento-source",
+        sourceId,
         const RasterSourceProperties(tiles: [], tileSize: 256),
       );
 
+      // Creamos la capa
       await controller.addLayer(
-        "viento-source",
-        "viento-layer",
-        const RasterLayerProperties(visibility: "none", rasterOpacity: 0.85),
-      );
-
-      // Capa de olas
-      await controller.addSource(
-        "olas-source",
-        const RasterSourceProperties(tiles: [], tileSize: 256),
-      );
-
-      await controller.addLayer(
-        "olas-source",
-        "olas-layer",
-        const RasterLayerProperties(visibility: "none", rasterOpacity: 0.85),
-      );
-
-      // Capa de temperatura
-      await controller.addSource(
-        "temp-source",
-        const RasterSourceProperties(tiles: [], tileSize: 256),
-      );
-
-      await controller.addLayer(
-        "temp-source",
-        "temp-layer",
-        const RasterLayerProperties(visibility: "none", rasterOpacity: 0.85),
-      );
-
-      // Capa de lluvia
-      await controller.addSource(
-        "lluvia-source",
-        const RasterSourceProperties(tiles: [], tileSize: 256),
-      );
-
-      await controller.addLayer(
-        "lluvia-source",
-        "lluvia-layer",
+        sourceId,
+        layerId,
         const RasterLayerProperties(visibility: "none", rasterOpacity: 0.85),
       );
     } catch (e) {
-      debugPrint("Error inicializando capas: $e");
+      debugPrint("Error creando fuente/capa $variable: $e");
     }
   }
 
-  // ⭐ Oculta todas las capas
+  // ---------------------------------------------------------------
+  //  Recarga la fuente con la URL correcta
+  // ---------------------------------------------------------------
+  Future<void> _recargarFuente(Spot spot, String variable) async {
+    final sourceId = "$variable-source";
+    final layerId = "$variable-layer";
+
+    final fuente = MapaFuentes.fuentePara(spot, variable);
+    final url = MapaFuentes.urlTiles(fuente, variable);
+
+    // Eliminamos y recreamos la fuente con la nueva URL
+    await controller.removeLayer(layerId).catchError((_) {});
+    await controller.removeSource(sourceId).catchError((_) {});
+
+    await controller.addSource(
+      sourceId,
+      RasterSourceProperties(tiles: [url], tileSize: 256),
+    );
+
+    await controller.addLayer(
+      sourceId,
+      layerId,
+      const RasterLayerProperties(visibility: "visible", rasterOpacity: 0.85),
+    );
+  }
+
+  // ---------------------------------------------------------------
+  //  Oculta todas las capas
+  // ---------------------------------------------------------------
   Future<void> ocultarTodas() async {
     await controller.setLayerVisibility("viento-layer", "none" as bool);
     await controller.setLayerVisibility("olas-layer", "none" as bool);
-    await controller.setLayerVisibility("temp-layer", "none" as bool);
+    await controller.setLayerVisibility("temperatura-layer", "none" as bool);
     await controller.setLayerVisibility("lluvia-layer", "none" as bool);
   }
 
-  // ⭐ Mostrar capa de viento
-  Future<void> mostrarViento() async {
+  // ---------------------------------------------------------------
+  //  Mostrar capas (Windy-like)
+  // ---------------------------------------------------------------
+  Future<void> mostrarViento(Spot spot) async {
     await ocultarTodas();
-    await controller.setLayerVisibility("viento-layer", "visible" as bool);
+    await _recargarFuente(spot, "viento");
   }
 
-  // ⭐ Mostrar capa de olas
-  Future<void> mostrarOlas() async {
+  Future<void> mostrarOlas(Spot spot) async {
     await ocultarTodas();
-    await controller.setLayerVisibility("olas-layer", "visible" as bool);
+    await _recargarFuente(spot, "olas");
   }
 
-  // ⭐ Mostrar capa de temperatura
-  Future<void> mostrarTemperatura() async {
+  Future<void> mostrarTemperatura(Spot spot) async {
     await ocultarTodas();
-    await controller.setLayerVisibility("temp-layer", "visible" as bool);
+    await _recargarFuente(spot, "temperatura");
   }
 
-  // ⭐ Mostrar capa de lluvia
-  Future<void> mostrarLluvia() async {
+  Future<void> mostrarLluvia(Spot spot) async {
     await ocultarTodas();
-    await controller.setLayerVisibility("lluvia-layer", "visible" as bool);
+    await _recargarFuente(spot, "lluvia");
   }
 }

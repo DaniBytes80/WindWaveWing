@@ -15,7 +15,6 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
   final _formKey = GlobalKey<FormState>();
   final MaterialService _service = MaterialService();
 
-  // Campos editables
   String? _disciplina;
   String? _tipo;
   String? _nombre;
@@ -25,7 +24,6 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
   String? _medida;
   String? _descripcion;
 
-  // DISCIPLINAS PERMITIDAS
   final List<String> disciplinas = [
     "kitesurf",
     "wingfoil",
@@ -34,7 +32,6 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
     "vela ligera",
   ];
 
-  // TIPOS POR DISCIPLINA
   final Map<String, List<String>> tiposPorDisciplina = {
     "surf": ["tabla", "foil"],
     "wingfoil": ["tabla", "ala", "foil"],
@@ -43,7 +40,6 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
     "vela ligera": ["tipo de barco"],
   };
 
-  // CLASES DE VELA LIGERA
   final List<String> clasesBarco = [
     "Optimist",
     "Cadete",
@@ -74,7 +70,6 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
   void initState() {
     super.initState();
 
-    // Precargar datos del material
     _disciplina = widget.material.disciplina;
     _tipo = widget.material.tipo;
     _nombre = widget.material.nombre;
@@ -165,7 +160,27 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
 
               const SizedBox(height: 16),
 
-              // ⭐ FOIL (front wing = medida)
+              // NOMBRE (opcional pero limpio)
+              TextFormField(
+                initialValue: _nombre,
+                decoration: const InputDecoration(
+                  labelText: "Nombre (opcional)",
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  if (!RegExp(
+                    r"^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,_-]{2,}$",
+                  ).hasMatch(v.trim())) {
+                    return "Nombre no válido";
+                  }
+                  return null;
+                },
+                onSaved: (v) => _nombre = v?.trim(),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ⭐ FOIL
               if (_tipo == "foil") ...[
                 const Text(
                   "Datos del Foil",
@@ -178,15 +193,15 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   decoration: const InputDecoration(
                     labelText: "Front Wing (cm²)",
                   ),
-                  onSaved: (v) => _medida = v,
                   validator: (v) =>
                       v == null || v.isEmpty ? "Introduce el front wing" : null,
+                  onSaved: (v) => _medida = v?.trim(),
                 ),
 
                 const SizedBox(height: 16),
               ],
 
-              // ⭐ VELA LIGERA (clase = medida)
+              // ⭐ VELA LIGERA
               if (_disciplina == "vela ligera" && _tipo == "tipo de barco") ...[
                 const Text(
                   "Clase de barco",
@@ -200,29 +215,25 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
                   initialValue: _medida,
-                  onChanged: (v) => setState(() => _medida = v),
                   validator: (v) =>
                       v == null ? "Selecciona una clase de barco" : null,
+                  onChanged: (v) => setState(() => _medida = v),
                 ),
 
                 const SizedBox(height: 16),
 
                 TextFormField(
                   initialValue: _marca,
-                  decoration: const InputDecoration(
-                    labelText: "Marca (opcional)",
-                  ),
-                  onSaved: (v) => _marca = v,
+                  decoration: const InputDecoration(labelText: "Marca"),
+                  onSaved: (v) => _marca = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
 
                 TextFormField(
                   initialValue: _modelo,
-                  decoration: const InputDecoration(
-                    labelText: "Modelo (opcional)",
-                  ),
-                  onSaved: (v) => _modelo = v,
+                  decoration: const InputDecoration(labelText: "Modelo"),
+                  onSaved: (v) => _modelo = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -231,6 +242,11 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   initialValue: _ano != null ? _ano.toString() : "",
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    if (int.tryParse(v) == null) return "Año no válido";
+                    return null;
+                  },
                   onSaved: (v) =>
                       _ano = v != null && v.isNotEmpty ? int.tryParse(v) : null,
                 ),
@@ -241,13 +257,13 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   initialValue: _descripcion,
                   decoration: const InputDecoration(labelText: "Descripción"),
                   maxLines: 3,
-                  onSaved: (v) => _descripcion = v,
+                  onSaved: (v) => _descripcion = v?.trim(),
                 ),
 
                 const SizedBox(height: 16),
               ],
 
-              // ⭐ CAMPOS GENERALES (excepto foil y vela ligera)
+              // ⭐ CAMPOS GENERALES
               if (_tipo != null &&
                   _tipo != "foil" &&
                   !(_disciplina == "vela ligera")) ...[
@@ -260,7 +276,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                 TextFormField(
                   initialValue: _marca,
                   decoration: const InputDecoration(labelText: "Marca"),
-                  onSaved: (v) => _marca = v,
+                  onSaved: (v) => _marca = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -268,7 +284,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                 TextFormField(
                   initialValue: _modelo,
                   decoration: const InputDecoration(labelText: "Modelo"),
-                  onSaved: (v) => _modelo = v,
+                  onSaved: (v) => _modelo = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -277,6 +293,11 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   initialValue: _ano != null ? _ano.toString() : "",
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    if (int.tryParse(v) == null) return "Año no válido";
+                    return null;
+                  },
                   onSaved: (v) =>
                       _ano = v != null && v.isNotEmpty ? int.tryParse(v) : null,
                 ),
@@ -288,7 +309,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   decoration: const InputDecoration(
                     labelText: "Medida (ej: 9m, 85L, 210cm)",
                   ),
-                  onSaved: (v) => _medida = v,
+                  onSaved: (v) => _medida = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -297,7 +318,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   initialValue: _descripcion,
                   decoration: const InputDecoration(labelText: "Descripción"),
                   maxLines: 3,
-                  onSaved: (v) => _descripcion = v,
+                  onSaved: (v) => _descripcion = v?.trim(),
                 ),
 
                 const SizedBox(height: 16),

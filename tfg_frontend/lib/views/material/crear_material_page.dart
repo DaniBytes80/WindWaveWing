@@ -20,10 +20,9 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
   String? _marca;
   String? _modelo;
   int? _ano;
-  String? _medida; // medida general o front wing o clase de barco
+  String? _medida;
   String? _descripcion;
 
-  // DISCIPLINAS PERMITIDAS
   final List<String> disciplinas = [
     "kitesurf",
     "wingfoil",
@@ -32,7 +31,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
     "vela ligera",
   ];
 
-  // TIPOS POR DISCIPLINA
   final Map<String, List<String>> tiposPorDisciplina = {
     "surf": ["tabla", "foil"],
     "wingfoil": ["tabla", "ala", "foil"],
@@ -41,7 +39,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
     "vela ligera": ["tipo de barco"],
   };
 
-  // CLASES DE VELA LIGERA
   final List<String> clasesBarco = [
     "Optimist",
     "Cadete",
@@ -90,7 +87,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
       marca: _marca,
       modelo: _modelo,
       ano: _ano,
-      medida: _medida, // front wing o clase de barco o medida normal
+      medida: _medida,
       descripcion: _descripcion,
     );
 
@@ -135,7 +132,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
 
               const SizedBox(height: 16),
 
-              // TIPO (DINÁMICO)
+              // TIPO
               if (_disciplina != null)
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -156,7 +153,26 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
 
               const SizedBox(height: 16),
 
-              // ⭐ FOIL (front wing = medida)
+              // NOMBRE (opcional pero limpio)
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: "Nombre (opcional)",
+                ),
+                onSaved: (v) => _nombre = v?.trim(),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  if (!RegExp(
+                    r"^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,_-]{2,}$",
+                  ).hasMatch(v.trim())) {
+                    return "Nombre no válido";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // ⭐ FOIL
               if (_tipo == "foil") ...[
                 const Text(
                   "Datos del Foil",
@@ -164,23 +180,19 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 ),
                 const SizedBox(height: 8),
 
-                // FRONT WING = MEDIDA
                 TextFormField(
                   decoration: const InputDecoration(
                     labelText: "Front Wing (cm²)",
                   ),
-                  onSaved: (v) => _medida = v,
-                  validator: (v) => v == null || v.isEmpty
-                      ? "Introduce el tamaño del front wing"
-                      : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Introduce el tamaño" : null,
+                  onSaved: (v) => _medida = v?.trim(),
                 ),
-
-                const SizedBox(height: 8),
 
                 const SizedBox(height: 16),
               ],
 
-              // ⭐ VELA LIGERA (clase = medida)
+              // ⭐ VELA LIGERA
               if (_disciplina == "vela ligera" && _tipo == "tipo de barco") ...[
                 const Text(
                   "Clase de barco",
@@ -193,27 +205,23 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                   items: clasesBarco
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
-                  onChanged: (v) => setState(() => _medida = v),
                   validator: (v) =>
                       v == null ? "Selecciona una clase de barco" : null,
+                  onChanged: (v) => setState(() => _medida = v),
                 ),
 
                 const SizedBox(height: 16),
 
                 TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: "Marca (opcional)",
-                  ),
-                  onSaved: (v) => _marca = v,
+                  decoration: const InputDecoration(labelText: "Marca"),
+                  onSaved: (v) => _marca = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
 
                 TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: "Modelo (opcional)",
-                  ),
-                  onSaved: (v) => _modelo = v,
+                  decoration: const InputDecoration(labelText: "Modelo"),
+                  onSaved: (v) => _modelo = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -221,6 +229,11 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    if (int.tryParse(v) == null) return "Año no válido";
+                    return null;
+                  },
                   onSaved: (v) =>
                       _ano = v != null && v.isNotEmpty ? int.tryParse(v) : null,
                 ),
@@ -230,13 +243,13 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Descripción"),
                   maxLines: 3,
-                  onSaved: (v) => _descripcion = v,
+                  onSaved: (v) => _descripcion = v?.trim(),
                 ),
 
                 const SizedBox(height: 16),
               ],
 
-              // ⭐ CAMPOS GENERALES (excepto foil y vela ligera)
+              // ⭐ CAMPOS GENERALES
               if (_tipo != null &&
                   _tipo != "foil" &&
                   !(_disciplina == "vela ligera")) ...[
@@ -248,14 +261,14 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
 
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Marca"),
-                  onSaved: (v) => _marca = v,
+                  onSaved: (v) => _marca = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
 
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Modelo"),
-                  onSaved: (v) => _modelo = v,
+                  onSaved: (v) => _modelo = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -263,6 +276,11 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    if (int.tryParse(v) == null) return "Año no válido";
+                    return null;
+                  },
                   onSaved: (v) =>
                       _ano = v != null && v.isNotEmpty ? int.tryParse(v) : null,
                 ),
@@ -273,7 +291,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                   decoration: const InputDecoration(
                     labelText: "Medida (ej: 9m, 85L, 210cm)",
                   ),
-                  onSaved: (v) => _medida = v,
+                  onSaved: (v) => _medida = v?.trim(),
                 ),
 
                 const SizedBox(height: 8),
@@ -281,7 +299,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Descripción"),
                   maxLines: 3,
-                  onSaved: (v) => _descripcion = v,
+                  onSaved: (v) => _descripcion = v?.trim(),
                 ),
 
                 const SizedBox(height: 16),

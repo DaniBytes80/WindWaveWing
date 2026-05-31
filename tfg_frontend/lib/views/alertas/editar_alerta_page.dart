@@ -116,16 +116,27 @@ class _EditarAlertaPageState extends State<EditarAlertaPage> {
           key: _formKey,
           child: ListView(
             children: [
+              // NOMBRE
               TextFormField(
                 initialValue: _nombre,
                 decoration: const InputDecoration(labelText: "Nombre"),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "Introduce un nombre" : null,
-                onSaved: (v) => _nombre = v,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return "Introduce un nombre";
+                  }
+                  if (!RegExp(
+                    r"^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,_-]{3,}$",
+                  ).hasMatch(v.trim())) {
+                    return "Nombre no válido";
+                  }
+                  return null;
+                },
+                onSaved: (v) => _nombre = v?.trim(),
               ),
 
               const SizedBox(height: 16),
 
+              // SPOT
               DropdownButtonFormField<String>(
                 initialValue: _spotId,
                 decoration: const InputDecoration(labelText: "Spot"),
@@ -135,11 +146,13 @@ class _EditarAlertaPageState extends State<EditarAlertaPage> {
                           DropdownMenuItem(value: s.id, child: Text(s.nombre)),
                     )
                     .toList(),
+                validator: (v) => v == null ? "Selecciona un spot" : null,
                 onChanged: (v) => setState(() => _spotId = v!),
               ),
 
               const SizedBox(height: 16),
 
+              // DISCIPLINA
               DropdownButtonFormField<String>(
                 initialValue: _disciplina,
                 decoration: const InputDecoration(labelText: "Disciplina"),
@@ -147,27 +160,37 @@ class _EditarAlertaPageState extends State<EditarAlertaPage> {
                     ["surf", "kitesurf", "windsurf", "wingfoil", "vela ligera"]
                         .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                         .toList(),
+                validator: (v) =>
+                    v == null ? "Selecciona una disciplina" : null,
                 onChanged: (v) => setState(() => _disciplina = v),
               ),
 
               const SizedBox(height: 16),
 
+              // NIVEL
               DropdownButtonFormField<String>(
                 initialValue: _nivel,
                 decoration: const InputDecoration(labelText: "Nivel técnico"),
                 items: nivelesTecnicos
                     .map((n) => DropdownMenuItem(value: n, child: Text(n)))
                     .toList(),
+                validator: (v) => v == null ? "Selecciona un nivel" : null,
                 onChanged: (v) => setState(() => _nivel = v),
               ),
 
               const SizedBox(height: 16),
 
+              // MENSAJE
               TextFormField(
                 initialValue: _mensaje,
                 decoration: const InputDecoration(labelText: "Mensaje"),
                 maxLines: 2,
-                onSaved: (v) => _mensaje = v,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null; // opcional
+                  if (v.length > 200) return "Máximo 200 caracteres";
+                  return null;
+                },
+                onSaved: (v) => _mensaje = v?.trim(),
               ),
 
               const SizedBox(height: 16),
