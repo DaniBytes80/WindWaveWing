@@ -7,26 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:305013403016:android:0c7359684f6f153908de3d",
-        "android_client_info": {
-          "package_name": "com.example.tfg_clima_malaga"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDA2pn2OwGpwsMDDQcQYj-D8YvPkFO8kmA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:305013403016:android:ce68d08fb6180c0208de3d",
+        "mobilesdk_app_id": "1:305013403016:android:7396841b9a7a729608de3d",
         "android_client_info": {
           "package_name": "com.windwavewing.app"
         }

@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+// ============================================================
+//  WebcamViewer
+//
+//  Orden de prioridad:
+//  1. HLS (.m3u8)      → video_player nativo
+//  2. MJPEG/imagen     → Image.network con refresco
+//  3. URL web          → InAppWebView (dentro de la app)
+//  4. Fallback         → botón abrir en navegador externo
+// ============================================================
 
 class WebcamViewer extends StatefulWidget {
   final String url;
-
   const WebcamViewer({super.key, required this.url});
 
   @override
@@ -11,133 +22,204 @@ class WebcamViewer extends StatefulWidget {
 }
 
 class _WebcamViewerState extends State<WebcamViewer> {
-  VideoPlayerController? _videoPlayerController;
+  VideoPlayerController? _videoCtrl;
 
-  bool _isHlsStream = false;
-  bool _hasError = false;
-  bool _isLoading = true;
+  _TipoCam _tipo = _TipoCam.cargando;
+  bool _error = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeViewer();
+    _detectarTipo();
   }
 
-  Future<void> _initializeViewer() async {
-    final urlLimpia = widget.url.trim().toLowerCase();
+  Future<void> _detectarTipo() async {
+    final url = widget.url.trim().toLowerCase();
 
-    if (urlLimpia.contains('.m3u8')) {
-      setState(() => _isHlsStream = true);
-
+    if (url.contains('.m3u8')) {
+      // ── HLS streaming ──────────────────────────────────
       try {
-        _videoPlayerController = VideoPlayerController.networkUrl(
+        _videoCtrl = VideoPlayerController.networkUrl(
           Uri.parse(widget.url.trim()),
         );
-        await _videoPlayerController!.initialize();
-
-        setState(() => _isLoading = false);
-      } catch (e) {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
+        await _videoCtrl!.initialize();
+        _videoCtrl!.play();
+        _videoCtrl!.setLooping(true);
+        if (mounted) setState(() => _tipo = _TipoCam.hls);
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _tipo = _TipoCam.web;
+          });
+        }
       }
+    } else if (url.contains('.jpg') ||
+        url.contains('.jpeg') ||
+        url.contains('.png') ||
+        url.contains('mjpeg') ||
+        url.contains('mjpg')) {
+      // ── Imagen estática o MJPEG ─────────────────────────
+      if (mounted) setState(() => _tipo = _TipoCam.imagen);
     } else {
-      setState(() {
-        _isHlsStream = false;
-        _isLoading = false;
-      });
+      // ── URL web → InAppWebView ──────────────────────────
+      if (mounted) setState(() => _tipo = _TipoCam.web);
     }
   }
 
-  Future<void> _abrirEnNavegador() async {}
-
   @override
   void dispose() {
-    _videoPlayerController?.dispose();
-
+    _videoCtrl?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.black.withValues(alpha: 0.85),
-      insetPadding: const EdgeInsets.all(20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 360,
-        height: 260,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            Center(child: _buildContent()),
+      backgroundColor: Colors.black,
+      insetPadding: const EdgeInsets.all(12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height * 0.55,
+          child: Stack(
+            children: [
+              _contenido(),
 
-            // BOTÓN X
-            Positioned(
-              right: 0,
-              top: 0,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 26),
-                onPressed: () => Navigator.of(context).pop(),
+              // X cerrar
+              Positioned(
+                right: 4,
+                top: 4,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _contenido() {
+    switch (_tipo) {
+      // ── Cargando ───────────────────────────────────────
+      case _TipoCam.cargando:
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Colors.blueAccent),
+              SizedBox(height: 12),
+              Text(
+                "Conectando con la cámara...",
+                style: TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        );
+
+      // ── HLS video ─────────────────────────────────────
+      case _TipoCam.hls:
+        if (_videoCtrl == null || !_videoCtrl!.value.isInitialized) {
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        }
+        return Center(
+          child: AspectRatio(
+            aspectRatio: _videoCtrl!.value.aspectRatio,
+            child: VideoPlayer(_videoCtrl!),
+          ),
+        );
+
+      // ── Imagen / MJPEG ────────────────────────────────
+      case _TipoCam.imagen:
+        return _ImagenCamara(url: widget.url);
+
+      // ── Web (InAppWebView dentro de la app) ───────────
+      case _TipoCam.web:
+        return InAppWebView(
+          initialUrlRequest: URLRequest(url: WebUri(widget.url.trim())),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            mediaPlaybackRequiresUserGesture: false,
+            allowsInlineMediaPlayback: true,
+            transparentBackground: false,
+          ),
+          onReceivedError: (ctrl, req, err) {
+            // Si falla el WebView → mostrar botón navegador externo
+            if (mounted) setState(() => _error = true);
+          },
+        );
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  _ImagenCamara — refresca la imagen cada 5 segundos
+//  (para cámaras que sirven JPG estático actualizado)
+// ─────────────────────────────────────────────────────────────
+class _ImagenCamara extends StatefulWidget {
+  final String url;
+  const _ImagenCamara({required this.url});
+
+  @override
+  State<_ImagenCamara> createState() => _ImagenCamaraState();
+}
+
+class _ImagenCamaraState extends State<_ImagenCamara> {
+  int _cacheKey = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresca cada 5s
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 5));
+      if (!mounted) return false;
+      setState(() => _cacheKey++);
+      return true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      '${widget.url}?t=$_cacheKey',
+      fit: BoxFit.contain,
+      loadingBuilder: (_, child, progress) => progress == null
+          ? child
+          : const Center(
+              child: CircularProgressIndicator(color: Colors.blueAccent),
+            ),
+      errorBuilder: (_, e, s) => const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.broken_image, color: Colors.white30, size: 48),
+            SizedBox(height: 8),
+            Text(
+              "No se pudo cargar la imagen",
+              style: TextStyle(color: Colors.white54),
             ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildContent() {
-    if (_isLoading) {
-      return const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: Colors.blueAccent),
-          SizedBox(height: 20),
-          Text(
-            "Conectando con el Spot...",
-            style: TextStyle(color: Colors.white54),
-          ),
-        ],
-      );
-    }
-
-    if (_isHlsStream) {
-      if (_hasError) {
-        return const Text(
-          "Error al decodificar el streaming HLS.\nVerifica tu conexión o permisos.",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.redAccent),
-        );
-      }
-    }
-
-    // Fallback para cámaras externas
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.public, color: Colors.white54, size: 60),
-        const SizedBox(height: 20),
-        const Text(
-          "Cámara alojada en servidor externo",
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: _abrirEnNavegador,
-          icon: const Icon(Icons.open_in_browser),
-          label: const Text("Abrir cámara en el navegador"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueAccent,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
 }
+
+enum _TipoCam { cargando, hls, imagen, web }

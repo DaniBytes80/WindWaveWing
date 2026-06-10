@@ -1,0 +1,226 @@
+## Table `Perfiles`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `nombre` | `text` |  Nullable |
+| `email` | `text` |  Nullable Unique |
+| `rol` | `varchar` |  Nullable |
+| `fecha_registro` | `timestamptz` |  |
+| `telefono` | `text` |  Nullable |
+| `surf` | `bool` |  Nullable |
+| `kite_surf` | `bool` |  Nullable |
+| `windsurf` | `bool` |  Nullable |
+| `wing` | `bool` |  Nullable |
+| `sail` | `bool` |  Nullable |
+| `id` | `uuid` | Primary |
+| `avatar_url` | `text` |  Nullable |
+| `peso_kg` | `int4` |  Nullable |
+| `notificaciones_activas` | `bool` |  Nullable |
+
+## Table `spatial_ref_sys`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `srid` | `int4` | Primary |
+| `auth_name` | `varchar` |  Nullable |
+| `auth_srid` | `int4` |  Nullable |
+| `srtext` | `varchar` |  Nullable |
+| `proj4text` | `varchar` |  Nullable |
+
+## Table `spot`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `nombre` | `text` |  |
+| `icono` | `text` |  Nullable |
+| `cam_url` | `text` |  Nullable |
+| `point` | `geography` |  |
+| `is_surf` | `bool` |  Nullable |
+| `is_kitesurf` | `bool` |  Nullable |
+| `is_windsurf` | `bool` |  Nullable |
+| `is_wing` | `bool` |  Nullable |
+| `is_sail` | `bool` |  Nullable |
+| `created_at` | `timestamptz` |  |
+| `pointjson` | `jsonb` |  Nullable |
+| `id_boya` | `text` |  Nullable |
+
+## Table `favoritos_spots`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `perfil_id` | `uuid` |  |
+| `spot_id` | `uuid` |  |
+| `created_at` | `timestamptz` |  |
+| `notificaciones` | `bool` |  Nullable |
+
+## Table `clima`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `spot_id` | `uuid` |  Nullable |
+| `fecha_hora` | `timestamptz` |  |
+| `velocidad_viento` | `float8` |  Nullable |
+| `direccion_viento` | `text` |  Nullable |
+| `racha_viento` | `float8` |  Nullable |
+| `altura_ola` | `float8` |  Nullable |
+| `periodo_ola` | `float8` |  Nullable |
+| `direccion_ola` | `text` |  Nullable |
+| `temperatura` | `float8` |  Nullable |
+| `humedad` | `float8` |  Nullable |
+| `probabilidad_lluvia` | `float8` |  Nullable |
+| `id` | `uuid` | Primary |
+
+## Table `PerfilDisciplinas`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `disciplina` | `text` |  |
+| `nivel` | `text` |  |
+
+## Table `MaterialUsuario`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `disciplina` | `text` |  |
+| `tipo` | `text` |  |
+| `nombre` | `text` |  Nullable |
+| `fecha_creacion` | `timestamp` |  Nullable |
+| `marca` | `text` |  Nullable |
+| `modelo` | `text` |  Nullable |
+| `ano` | `int4` |  Nullable |
+| `medida` | `text` |  Nullable |
+| `descripcion` | `text` |  Nullable |
+
+## Table `MaterialDetalle`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `material_id` | `uuid` |  Nullable |
+| `volumen_l` | `numeric` |  Nullable |
+| `largo_cm` | `numeric` |  Nullable |
+| `ancho_cm` | `numeric` |  Nullable |
+| `grosor_cm` | `numeric` |  Nullable |
+| `superficie_m2` | `numeric` |  Nullable |
+| `tipo_tabla` | `text` |  Nullable |
+| `tipo_barco` | `text` |  Nullable |
+| `mastil_foil_cm` | `numeric` |  Nullable |
+| `front_cm2` | `numeric` |  Nullable |
+| `stab_cm2` | `numeric` |  Nullable |
+| `mastil_vela_cm` | `numeric` |  Nullable |
+| `botavara_cm` | `numeric` |  Nullable |
+| `extra` | `jsonb` |  Nullable |
+
+## Table `ReglasMaterial`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `disciplina` | `text` |  |
+| `nivel` | `text` |  |
+| `peso_min` | `int4` |  Nullable |
+| `peso_max` | `int4` |  Nullable |
+| `viento_min` | `numeric` |  Nullable |
+| `viento_max` | `numeric` |  Nullable |
+| `ola_min` | `numeric` |  Nullable |
+| `ola_max` | `numeric` |  Nullable |
+| `periodo_min` | `numeric` |  Nullable |
+| `periodo_max` | `numeric` |  Nullable |
+| `volumen_min` | `numeric` |  Nullable |
+| `volumen_max` | `numeric` |  Nullable |
+| `superficie_min` | `numeric` |  Nullable |
+| `superficie_max` | `numeric` |  Nullable |
+| `mastil_foil_min` | `numeric` |  Nullable |
+| `mastil_foil_max` | `numeric` |  Nullable |
+| `front_min` | `numeric` |  Nullable |
+| `front_max` | `numeric` |  Nullable |
+| `stab_min` | `numeric` |  Nullable |
+| `stab_max` | `numeric` |  Nullable |
+| `tipo_tabla` | `text` |  Nullable |
+| `tipo_barco` | `text` |  Nullable |
+| `descripcion` | `text` |  Nullable |
+
+## Table `Dispositivos`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `token` | `text` |  Unique |
+| `fecha_registro` | `timestamp` |  Nullable |
+
+## Table `AlertasGeneradas`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `spot_id` | `uuid` |  Nullable |
+| `fecha` | `timestamp` |  Nullable |
+| `mensaje` | `text` |  Nullable |
+| `material_usado` | `uuid` |  Nullable |
+
+## Table `AlertasUsuario`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `user_id` | `uuid` |  |
+| `spot_id` | `uuid` |  |
+| `activa` | `bool` |  |
+| `nombre` | `text` |  Nullable |
+| `fecha_creacion` | `timestamp` |  |
+| `disciplina` | `text` |  Nullable |
+| `nivel` | `text` |  Nullable |
+| `mensaje` | `text` |  Nullable |
+
+## Table `clima_grid`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `int8` | Primary |
+| `lat` | `numeric` |  |
+| `lng` | `numeric` |  |
+| `fecha_hora` | `timestamptz` |  |
+| `velocidad_viento` | `numeric` |  Nullable |
+| `direccion_viento` | `numeric` |  Nullable |
+| `racha_viento` | `numeric` |  Nullable |
+| `temperatura` | `numeric` |  Nullable |
+| `precipitacion` | `numeric` |  Nullable |
+| `altura_ola` | `numeric` |  Nullable |
+| `direccion_ola` | `numeric` |  Nullable |
+| `periodo_ola` | `numeric` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+

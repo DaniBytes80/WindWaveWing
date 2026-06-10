@@ -24,6 +24,7 @@ dependencies:
   provider: ^6.1.5+1
   image_picker: ^1.1.2
 # Dependencias de autenticación
+  app_links: ^6.3.2
   google_sign_in: ^6.2.1
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
@@ -40,6 +41,8 @@ dependencies:
 
   mbtiles: ^0.3.0              # tiles en SQLite (offline España)
   hive_flutter: ^1.1.0        # almacenamiento local para caché de tiles
+  url_launcher: ^6.3.2
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:

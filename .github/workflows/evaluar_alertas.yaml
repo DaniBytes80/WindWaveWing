@@ -1,29 +1,27 @@
-name: Ingesta de grid meteorológico
-
+name: Evaluación de alertas meteorológicas
+ 
 on:
   schedule:
-    # Grid Open-Meteo global: cada 4 horas
     - cron: "0 */4 * * *"
-  workflow_dispatch:   # permite ejecutarlo manualmente desde GitHub
-
+  workflow_dispatch:
+ 
 jobs:
   ingesta_grid:
     runs-on: ubuntu-latest
     env:
       SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
+ 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+ 
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
+ 
       - name: Instalar dependencias
         run: pip install -r tfg_backend/requirements.txt
-
-      - name: Ingestar grid global (Open-Meteo)
+ 
+      - name: Ingestar grid global
         run: python tfg_backend/ingesta_grid.py
+ 

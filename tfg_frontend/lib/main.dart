@@ -6,9 +6,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_links/app_links.dart';
 
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
+import 'package:tfg_clima_malaga/services/notifications_service.dart';
 import 'package:tfg_clima_malaga/views/principal/principal.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'configuration.dart';
@@ -28,8 +30,102 @@ Future<void> main() async {
   runApp(const WindWaveWingApp());
 }
 
-class WindWaveWingApp extends StatelessWidget {
+class WindWaveWingApp extends StatefulWidget {
   const WindWaveWingApp({super.key});
+
+  @override
+  State<WindWaveWingApp> createState() => _WindWaveWingAppState();
+}
+
+class _WindWaveWingAppState extends State<WindWaveWingApp> {
+  late final StreamSubscription<AuthState> _authSub;
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _escucharAuth();
+    _escucharDeepLinks();
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  Escucha cambios de sesión de Supabase
+  //  Cuando Google (o cualquier OAuth) completa el login,
+  //  Supabase emite AuthChangeEvent.signedIn → navegamos
+  // ─────────────────────────────────────────────────────────
+  void _escucharAuth() {
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) async {
+      final event = data.event;
+      final session = data.session;
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        // Usuario autenticado → cargar perfil y navegar
+        final userManager = UserManager();
+        await userManager.cargarPerfil();
+
+        final userId = userManager.perfil?.id;
+        if (userId != null) {
+          await NotificationsService().init(userId);
+        }
+
+        if (!UserManager().estaInicializado) {
+          await SpotManager().inicializar();
+          await SpotManager().cargarFavoritos();
+          UserManager().estaInicializado = true;
+        }
+
+        // Navegar a la pantalla principal si no estamos ya en ella
+        final context = navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),
+            (route) => false,
+          );
+        }
+      }
+
+      if (event == AuthChangeEvent.signedOut) {
+        // Si se cierra sesión, el WWWDrawer ya maneja la navegación
+        UserManager().estaInicializado = false;
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  Escucha deep links (windwavewing://auth/callback)
+  //  Necesario para que el callback de Google OAuth
+  //  llegue a la app desde el navegador externo
+  // ─────────────────────────────────────────────────────────
+  void _escucharDeepLinks() {
+    _appLinks = AppLinks();
+
+    // Deep link que abrió la app (si estaba cerrada)
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) _procesarLink(uri);
+    });
+
+    // Deep links mientras la app está abierta
+    _linkSub = _appLinks.uriLinkStream.listen(
+      (uri) => _procesarLink(uri),
+      onError: (e) => debugPrint('❌ Deep link error: $e'),
+    );
+  }
+
+  Future<void> _procesarLink(Uri uri) async {
+    debugPrint('🔗 Deep link recibido: $uri');
+    // Supabase procesa automáticamente el token del callback
+    // El onAuthStateChange se dispara solo — no hace falta hacer nada más
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    _linkSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +140,9 @@ class WindWaveWingApp extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  SplashPage — sin cambios
+// ─────────────────────────────────────────────────────────────
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -62,8 +161,8 @@ class _SplashPageState extends State<SplashPage> {
     final spotManager = SpotManager();
     final userManager = UserManager();
     await spotManager.inicializar();
-    await spotManager.cargarFavoritos();// Cargar favoritos
-    await userManager.cargarPerfilSiExiste();// Cargar perfil si existe
+    await spotManager.cargarFavoritos();
+    await userManager.cargarPerfilSiExiste();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),

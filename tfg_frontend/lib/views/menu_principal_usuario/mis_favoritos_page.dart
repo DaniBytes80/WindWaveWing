@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tfg_clima_malaga/models/spot.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 
@@ -7,8 +8,7 @@ class MisFavoritosPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spotManager = SpotManager(); // ⭐ referencia única
-
+    final spotManager = SpotManager();
     final spotsFavoritos = spotManager.spots
         .where((s) => spotManager.favoritos.contains(s.id))
         .toList();
@@ -17,7 +17,7 @@ class MisFavoritosPage extends StatelessWidget {
       type: MaterialType.transparency,
       child: Stack(
         children: [
-          // ⭐ Fondo semitransparente
+          // Fondo semitransparente — pulsar fuera cierra
           Positioned.fill(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
@@ -27,13 +27,12 @@ class MisFavoritosPage extends StatelessWidget {
             ),
           ),
 
-          // ⭐ Ventana centrada
           Center(
             child: Container(
-              width: 260,
+              width: 270,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Colors.white24),
               ),
@@ -41,7 +40,7 @@ class MisFavoritosPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ⭐ Título + botón X
+                  // Título + X
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -55,14 +54,17 @@ class MisFavoritosPage extends StatelessWidget {
                       ),
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Icon(Icons.close, color: Colors.white),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white54,
+                          size: 22,
+                        ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 12),
 
-                  // ⭐ Si no hay favoritos
                   if (spotsFavoritos.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 10),
@@ -72,7 +74,8 @@ class MisFavoritosPage extends StatelessWidget {
                       ),
                     ),
 
-                  // ⭐ Lista de favoritos
+                  // ✅ FIX: al pulsar un favorito navega correctamente
+                  // Devuelve el Spot seleccionado al caller (principal.dart)
                   ...spotsFavoritos.map(
                     (spot) => ListTile(
                       dense: true,
@@ -90,7 +93,9 @@ class MisFavoritosPage extends StatelessWidget {
                         ),
                       ),
                       onTap: () {
-                        Navigator.pop(context, spot); // ⭐ devolvemos el spot
+                        // ✅ Devuelve el Spot — principal.dart lo recibe
+                        // y llama a actualizarSpot(spot)
+                        Navigator.pop(context, spot);
                       },
                     ),
                   ),
@@ -103,3 +108,16 @@ class MisFavoritosPage extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+//  CÓMO ABRIR MisFavoritosPage desde el drawer o donde sea:
+//
+//  final spot = await Navigator.push<Spot>(
+//    context,
+//    MaterialPageRoute(builder: (_) => const MisFavoritosPage()),
+//  );
+//  if (spot != null && context.mounted) {
+//    // Obtener VentanaInicioUsuarioState y llamar actualizarSpot
+//    // O usar un callback/provider según tu arquitectura
+//  }
+// ============================================================

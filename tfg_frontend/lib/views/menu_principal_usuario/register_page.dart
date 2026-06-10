@@ -16,8 +16,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _cargando = false;
-  bool _verPassword = false; // ✅
-  bool _verConfirm = false; // ✅
+  bool _verPassword = false;
+  bool _verConfirm = false;
 
   Future<void> signUp() async {
     final email = _emailController.text.trim();
@@ -43,38 +43,61 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       await authService.signUpWithEmailPassword(email, pass);
       if (mounted) {
+        // ✅ FIX: cerrar el diálogo de registro primero
         Navigator.pop(context);
+        // ✅ FIX: usar showDialog con barrierDismissible: true
+        //         y X para cerrar en vez de botón "Entendido"
         showDialog(
           context: context,
-          barrierDismissible: false,
-          builder: (_) => AlertDialog(
+          barrierDismissible: true, // pulsar fuera cierra
+          builder: (_) => Dialog(
             backgroundColor: EstilosWWW.colorFondoPantalla,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Row(
-              children: [
-                Icon(Icons.mark_email_unread, color: Colors.amber),
-                SizedBox(width: 8),
-                Text(
-                  "Confirma tu email",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ],
-            ),
-            content: Text(
-              "Hemos enviado un enlace de confirmación a:\n\n$email\n\n"
-              "Revisa tu bandeja de entrada (y spam).\n"
-              "Una vez confirmado ya puedes iniciar sesión.",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            actions: [
-              ElevatedButton(
-                style: EstilosWWW.botonOscuro,
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Entendido"),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ✅ Fila título + X
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.mark_email_unread, color: Colors.amber),
+                          SizedBox(width: 8),
+                          Text(
+                            "Confirma tu email",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white54,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Hemos enviado un enlace de confirmación a:\n\n$email\n\n"
+                    "Revisa tu bandeja de entrada (y spam).\n"
+                    "Una vez confirmado ya puedes iniciar sesión.",
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       }
@@ -92,7 +115,6 @@ class _RegisterPageState extends State<RegisterPage> {
     ),
   );
 
-  // ✅ Campo con toggle ver/ocultar
   Widget _campoPassword({
     required TextEditingController controller,
     required String label,
@@ -146,7 +168,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 20),
-
             WWWWidgets.campoTexto(
               controller: _emailController,
               label: "Email",
@@ -154,21 +175,18 @@ class _RegisterPageState extends State<RegisterPage> {
               tipoTeclado: TextInputType.emailAddress,
               readOnly: false,
             ),
-
             _campoPassword(
               controller: _passwordController,
               label: "Contraseña",
               verTexto: _verPassword,
               onToggle: () => setState(() => _verPassword = !_verPassword),
             ),
-
             _campoPassword(
               controller: _confirmPasswordController,
               label: "Confirmar contraseña",
               verTexto: _verConfirm,
               onToggle: () => setState(() => _verConfirm = !_verConfirm),
             ),
-
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

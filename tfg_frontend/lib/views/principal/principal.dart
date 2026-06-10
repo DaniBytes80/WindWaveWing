@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import 'package:tfg_clima_malaga/models/spot.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
@@ -22,7 +24,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
 
   bool _menuAbierto = false;
   String _capaActiva = 'viento';
-  DateTime? _horaSeleccionada; // ✅ hora pulsada en tabla → actualiza mapa
+  DateTime? _horaSeleccionada;
 
   @override
   void initState() {
@@ -44,10 +46,17 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
   Future<void> actualizarSpot(Spot spotEncontrado) async {
     final spotManager = SpotManager();
     await spotManager.cambiarSpot(spotEncontrado);
-    // Al cambiar de spot volvemos a la hora actual
     setState(() => _horaSeleccionada = null);
     FocusScope.of(context).unfocus();
     _controllerBuscador.clear();
+  }
+
+  String _labelMapa() {
+    if (_horaSeleccionada == null) return '';
+    final l = _horaSeleccionada!.toLocal();
+    final dia = DateFormat('EEE d MMM', 'es_ES').format(l);
+    final h = l.hour.toString().padLeft(2, '0');
+    return '$dia  $h:00h';
   }
 
   @override
@@ -117,7 +126,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
 
             body: Stack(
               children: [
-                // ── 0. MAPA ────────────────────────────────
+                // ── 0. MAPA ──────────────────────────────────
                 Positioned.fill(
                   child: WwwMapScreen(
                     spots: listaSpots,
@@ -129,93 +138,134 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                   ),
                 ),
 
-                // ── 1. BUSCADOR ────────────────────────────
+                // ── 1. BUSCADOR (fila con botón menú) ────────
+                // ✅ FIX: buscador y botón menú en la misma fila
+                // para evitar solapamiento con la etiqueta de hora
                 Positioned(
                   top: 15,
                   left: 15,
-                  right: 100,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: EstilosWWW.colorBordeTabla.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: EstilosWWW.colorBordeTabla),
-                    ),
-                    child: WWWBuscador(
-                      controller: _controllerBuscador,
-                      opciones: listaSpots.map((s) => s.nombre).toList(),
-                      onSearch: (String valor) {
-                        if (valor.trim().isEmpty) return;
-                        final spot = spotManager.buscarSpot(valor);
-                        if (spot != null) actualizarSpot(spot);
-                      },
-                    ),
+                  right: 15,
+                  child: Row(
+                    children: [
+                      // Buscador
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: EstilosWWW.colorBordeTabla.withValues(
+                              alpha: 0.9,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: EstilosWWW.colorBordeTabla,
+                            ),
+                          ),
+                          child: WWWBuscador(
+                            controller: _controllerBuscador,
+                            opciones: listaSpots.map((s) => s.nombre).toList(),
+                            onSearch: (String valor) {
+                              if (valor.trim().isEmpty) return;
+                              final spot = spotManager.buscarSpot(valor);
+                              if (spot != null) actualizarSpot(spot);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Botón menú
+                      GestureDetector(
+                        onTap: _toggleMenu,
+                        child: Image.asset(
+                          'assets/images/wwwIcono2.png',
+                          width: 50,
+                          height: 50,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                // ── 2. BOTÓN MENÚ ──────────────────────────
-                Positioned(
-                  top: 10,
-                  right: 5,
-                  child: GestureDetector(
-                    onTap: _toggleMenu,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Image.asset(
-                        'assets/images/wwwIcono2.png',
-                        width: 50,
-                        height: 50,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ── 3. MENÚ ANIMADO ────────────────────────
+                // ── 2. MENÚ ANIMADO ──────────────────────────
                 MenuAnimado(
                   abierto: _menuAbierto,
                   onClose: _toggleMenu,
-                  onViento: () {
-                    setState(() {
-                      _capaActiva = 'viento';
-                      _menuAbierto = false;
-                    });
-                  },
-                  onOlas: () {
-                    setState(() {
-                      _capaActiva = 'olas';
-                      _menuAbierto = false;
-                    });
-                  },
-                  onLluvia: () {
-                    setState(() {
-                      _capaActiva = 'lluvia';
-                      _menuAbierto = false;
-                    });
-                  },
-                  onTemp: () {
-                    setState(() {
-                      _capaActiva = 'temperatura';
-                      _menuAbierto = false;
-                    });
-                  },
+                  onViento: () => setState(() {
+                    _capaActiva = 'viento';
+                    _menuAbierto = false;
+                  }),
+                  onOlas: () => setState(() {
+                    _capaActiva = 'olas';
+                    _menuAbierto = false;
+                  }),
+                  onLluvia: () => setState(() {
+                    _capaActiva = 'lluvia';
+                    _menuAbierto = false;
+                  }),
+                  onTemp: () => setState(() {
+                    _capaActiva = 'temperatura';
+                    _menuAbierto = false;
+                  }),
                 ),
 
-                // ── 4. TABLA CLIMA ─────────────────────────
+                // ── 3. TABLA CLIMA + ETIQUETA HORA ───────────
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
                   child: Padding(
                     padding: const EdgeInsets.all(15),
-                    child: WWWTablaClima(
-                      datosMeteorologicos: clima,
-                      // ✅ Cuando el usuario pulsa una hora en la
-                      // tabla de horas, se actualiza el mapa
-                      onHoraSeleccionada: (hora) =>
-                          setState(() => _horaSeleccionada = hora),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // ✅ Etiqueta hora ENCIMA de la tabla,
+                        // nunca solapada con el buscador
+                        if (_horaSeleccionada != null)
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _horaSeleccionada = null),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.90),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: Colors.black87,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    _labelMapa(),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        WWWTablaClima(
+                          datosMeteorologicos: clima,
+                          onHoraSeleccionada: (hora) =>
+                              setState(() => _horaSeleccionada = hora),
+                        ),
+                      ],
                     ),
                   ),
                 ),

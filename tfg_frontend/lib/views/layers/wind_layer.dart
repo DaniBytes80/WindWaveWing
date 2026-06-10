@@ -6,20 +6,22 @@ import 'package:tfg_clima_malaga/domain/interpolators/weather_point.dart';
 
 // ============================================================
 //  WindLayer — flutter_map v7
-//
-//  ✅ FIX: Usa CustomPainterLayer en vez de MobileLayerTransformer
-//  (eliminado en flutter_map v6+).
-//
-//  Partículas animadas tipo Windy. Color y grosor según nudos:
-//    < 7 kn  → azul claro   < 14 → cian   < 21 → verde
-//    < 33 → amarillo   < 47 → naranja   ≥ 47 → rojo
+//  FIX DEFINITIVO: recibe MapCamera como parámetro explícito
+//  desde www_map_screen.dart en vez de intentar obtenerla
+//  del contexto (que falla en children de FlutterMap).
 // ============================================================
 
 class WindLayer extends StatefulWidget {
   final List<WeatherPoint> points;
   final TickerProvider vsync;
+  final MapCamera camera; // ✅ recibida desde fuera
 
-  const WindLayer({super.key, required this.points, required this.vsync});
+  const WindLayer({
+    super.key,
+    required this.points,
+    required this.vsync,
+    required this.camera,
+  });
 
   @override
   State<WindLayer> createState() => _WindLayerState();
@@ -81,23 +83,18 @@ class _WindLayerState extends State<WindLayer>
 
   @override
   Widget build(BuildContext context) {
-    // ✅ flutter_map v7: usar el mapCamera del contexto para proyectar coords
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (context, _) {
-        final camera = MapCamera.of(context);
-        return CustomPaint(
-          painter: _WindPainter(
-            points: widget.points,
-            particles: _particles,
-            animValue: _ctrl.value,
-            camera: camera,
-            rnd: _rnd,
-          ),
-          size: Size.infinite,
-          child: const SizedBox.expand(),
-        );
-      },
+      builder: (_, __) => CustomPaint(
+        painter: _WindPainter(
+          points: widget.points,
+          particles: _particles,
+          animValue: _ctrl.value,
+          camera: widget.camera,
+          rnd: _rnd,
+        ),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 }
@@ -136,7 +133,6 @@ class _WindPainter extends CustomPainter {
     required this.rnd,
   });
 
-  // Convierte lat/lng → píxel en el canvas usando la cámara del mapa
   Offset _toPixel(double lat, double lng) {
     final pt = camera.latLngToScreenPoint(LatLng(lat, lng));
     return Offset(pt.x, pt.y);
@@ -159,7 +155,6 @@ class _WindPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (points.isEmpty || particles.isEmpty) return;
-
     for (final p in particles) {
       final wp = _nearest(p.lat, p.lng);
       if (wp == null) continue;
@@ -167,6 +162,14 @@ class _WindPainter extends CustomPainter {
       if (speed < 0.5) continue;
 
       final cur = _toPixel(p.lat, p.lng);
+      if (cur.dx < -50 ||
+          cur.dx > size.width + 50 ||
+          cur.dy < -50 ||
+          cur.dy > size.height + 50) {
+        p.reset(rnd);
+        continue;
+      }
+
       final dt = 0.004 * speed;
       final rad = wp.dir * math.pi / 180;
       final prev = Offset(
@@ -182,12 +185,11 @@ class _WindPainter extends CustomPainter {
         prev,
         cur,
         Paint()
-          ..color = _color(speed).withValues(alpha: opacity * 0.80)
+          ..color = _color(speed).withValues(alpha: opacity * 0.85)
           ..strokeWidth = (speed / 18).clamp(0.8, 3.5)
           ..strokeCap = StrokeCap.round,
       );
 
-      // Actualizar posición de la partícula (en grados)
       p.lat += math.cos(rad) * dt * 0.04;
       p.lng += math.sin(rad) * dt * 0.04;
     }

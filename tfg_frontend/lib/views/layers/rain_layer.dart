@@ -3,26 +3,15 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:tfg_clima_malaga/domain/interpolators/weather_point.dart';
 
-// ============================================================
-//  RainLayer — flutter_map v7
-//  Heatmap de lluvia/precipitación. El fondo siempre visible.
-//  0%   → transparente
-//  1-20 → azul pálido
-//  20-50→ azul
-//  50-80→ violeta
-//  >80  → magenta (tormenta)
-// ============================================================
-
 class RainLayer extends StatelessWidget {
   final List<WeatherPoint> points;
-  const RainLayer({super.key, required this.points});
+  final MapCamera camera;
+  const RainLayer({super.key, required this.points, required this.camera});
 
   @override
   Widget build(BuildContext context) {
-    final camera = MapCamera.of(context);
     return CustomPaint(
       painter: _RainPainter(points: points, camera: camera),
-      size: Size.infinite,
       child: const SizedBox.expand(),
     );
   }
@@ -31,7 +20,6 @@ class RainLayer extends StatelessWidget {
 class _RainPainter extends CustomPainter {
   final List<WeatherPoint> points;
   final MapCamera camera;
-
   _RainPainter({required this.points, required this.camera});
 
   Offset _toPixel(double lat, double lng) {
@@ -42,26 +30,22 @@ class _RainPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (points.isEmpty) return;
-
     final refA = _toPixel(0.0, 0.0);
     final refB = _toPixel(0.0, 2.5);
     final radius = (refB.dx - refA.dx).abs().clamp(20.0, 200.0);
 
     for (final p in points) {
       final mm = p.value.clamp(0.0, 100.0);
-      if (mm < 1.0) continue; // sin lluvia → no pintar
-
+      if (mm < 1.0) continue;
       final center = _toPixel(p.lat, p.lng);
       if (center.dx < -radius ||
           center.dx > size.width + radius ||
           center.dy < -radius ||
-          center.dy > size.height + radius) {
+          center.dy > size.height + radius)
         continue;
-      }
 
       final color = _colorForRain(mm);
       final opacity = (mm / 80.0).clamp(0.08, 0.60);
-
       final shader = RadialGradient(
         colors: [
           color.withValues(alpha: opacity),
@@ -70,7 +54,6 @@ class _RainPainter extends CustomPainter {
         ],
         stops: const [0.0, 0.55, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
-
       canvas.drawCircle(center, radius, Paint()..shader = shader);
     }
   }
