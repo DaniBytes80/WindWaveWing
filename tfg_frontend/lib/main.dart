@@ -9,25 +9,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/views/principal.dart';
-import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/views/principal/principal.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'configuration.dart';
 
-// ⭐ CLAVE GLOBAL PARA NAVEGACIÓN Y DIÁLOGOS
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await initializeDateFormatting('es_ES', null);
-
-  // ⭐ 1. Inicializar Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // ⭐ 2. Inicializar Supabase
   await Supabase.initialize(
     url: Configuration.supabaseUrl,
-    anonKey: Configuration.supabaseAnonKey,
+    publishableKey: Configuration.supabaseAnonKey,
   );
 
   runApp(const WindWaveWingApp());
@@ -66,16 +61,9 @@ class _SplashPageState extends State<SplashPage> {
   Future<void> _inicializarApp() async {
     final spotManager = SpotManager();
     final userManager = UserManager();
-
-    // ⭐ 1. Cargar spots
     await spotManager.inicializar();
-
-    await spotManager.cargarFavoritos();
-
-    // ⭐ 2. Cargar perfil si existe
-    await userManager.cargarPerfilSiExiste();
-
-    // ⭐ 3. Ir SIEMPRE a VentanaInicioUsuario
+    await spotManager.cargarFavoritos();// Cargar favoritos
+    await userManager.cargarPerfilSiExiste();// Cargar perfil si existe
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),

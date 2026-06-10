@@ -192,7 +192,57 @@ insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_win
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rincón de la Victoria', 'POINT(36.714105 -4.292650)', true, false, false, false, true);
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Guadalmar', 'POINT(36.657960 -4.465166)', false, true, true, true, true);
 insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playamar', 'POINT(36.633802 -4.486064)', false, false, true, true, true);
-
+INSERT INTO public.spot (nombre,icono,cam_url,point,is_surf,is_kitesurf,is_windsurf,is_wing,is_sail,pointjson,id_boya) VALUES
+('Leucate - La Franqui','windsurf.png','https://www.windcam.fr/leucate',ST_SetSRID(ST_MakePoint(3.033, 42.925), 4326),
+ false, true, true, true, false,'{"type":"Point","coordinates":[3.033,42.925]}'::jsonb,NULL),
+('Viganj','windsurf.png','https://www.viganjlive.com',ST_SetSRID(ST_MakePoint(17.133, 42.987), 4326),
+ false, false, true, true, false,'{"type":"Point","coordinates":[17.133,42.987]}'::jsonb,NULL),
+('Karpathos - Chicken Bay','windsurf.png','https://www.mikri-karpathos.com/livecam',ST_SetSRID(ST_MakePoint(27.213, 35.507), 4326),
+ false, true, true, true, false,'{"type":"Point","coordinates":[27.213,35.507]}'::jsonb, NULL),
+('Silvaplana','windsurf.png','https://www.silvaplana.ch/livecams', ST_SetSRID(ST_MakePoint(9.796, 46.459), 4326),
+ false, false, true, true, false,'{"type":"Point","coordinates":[9.796,46.459]}'::jsonb, NULL),
+('Hanstholm', 'windsurf.png', 'https://www.hanstholm.dk/live', ST_SetSRID(ST_MakePoint(8.616, 57.116), 4326),
+ true, false, true, true, false, '{"type":"Point","coordinates":[8.616,57.116]}'::jsonb, NULL),
+('Langebaan', 'windsurf.png', 'https://www.langebaanlive.com', ST_SetSRID(ST_MakePoint(18.033, -33.090), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[18.033,-33.09]}'::jsonb, NULL),
+('Dakhla Lagoon', 'kitesurf.png', 'https://www.dakhlaattitude.ma/livecam', ST_SetSRID(ST_MakePoint(-15.783, 23.866), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-15.783,23.866]}'::jsonb, NULL),
+('Essaouira', 'windsurf.png', 'https://www.mogadorlive.com', ST_SetSRID(ST_MakePoint(-9.763, 31.508), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-9.763,31.508]}'::jsonb, NULL),
+('Cape Town - Blouberg', 'windsurf.png', 'https://www.capetownwebcam.com', ST_SetSRID(ST_MakePoint(18.466, -33.800), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[18.466,-33.8]}'::jsonb, NULL),
+('Le Morne', 'kitesurf.png', 'https://www.lemorneview.com', ST_SetSRID(ST_MakePoint(57.310, -20.455), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[57.31,-20.455]}'::jsonb, NULL),
+('Maui - Kanaha', 'windsurf.png', 'https://www.mauiwindcam.com', ST_SetSRID(ST_MakePoint(-156.438, 20.898), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-156.438,20.898]}'::jsonb, NULL),
+('Cabarete', 'kitesurf.png', 'https://www.cabaretewebcam.com', ST_SetSRID(ST_MakePoint(-70.412, 19.749), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-70.412,19.749]}'::jsonb, NULL),
+('Jericoacoara', 'windsurf.png', 'https://www.jerilive.com', ST_SetSRID(ST_MakePoint(-40.512, -2.796), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-40.512,-2.796]}'::jsonb, NULL),
+('La Ventana', 'kitesurf.png', 'https://www.laventanacam.com', ST_SetSRID(ST_MakePoint(-109.992, 24.042), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[-109.992,24.042]}'::jsonb, NULL),
+('Hood River - The Gorge', 'windsurf.png', 'https://www.thegorgecam.com', ST_SetSRID(ST_MakePoint(-121.512, 45.708), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[-121.512,45.708]}'::jsonb, NULL),
+('Boracay - Bulabog Beach', 'kitesurf.png', 'https://www.boracaylive.com', ST_SetSRID(ST_MakePoint(121.928, 11.967), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[121.928,11.967]}'::jsonb, NULL),
+('Mui Ne', 'kitesurf.png', 'https://www.muinecam.com', ST_SetSRID(ST_MakePoint(108.283, 10.933), 4326),
+ false, true, true, false, false, '{"type":"Point","coordinates":[108.283,10.933]}'::jsonb, NULL),
+('Kalpitiya', 'kitesurf.png', 'https://www.kalpitiyawebcam.com', ST_SetSRID(ST_MakePoint(79.766, 8.233), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[79.766,8.233]}'::jsonb, NULL),
+('Masirah Island', 'kitesurf.png', NULL, ST_SetSRID(ST_MakePoint(58.883, 20.600), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[58.883,20.6]}'::jsonb, NULL),
+('Omaezaki', 'windsurf.png', 'https://www.omaezakicam.jp', ST_SetSRID(ST_MakePoint(138.216, 34.600), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[138.216,34.6]}'::jsonb, NULL),
+('Currumbin - Gold Coast', 'kitesurf.png', 'https://www.coastalwatch.com', ST_SetSRID(ST_MakePoint(153.505, -28.165), 4326),
+ true, true, false, true, false, '{"type":"Point","coordinates":[153.505,-28.165]}'::jsonb, NULL),
+('Geraldton', 'windsurf.png', 'https://www.geraldtoncam.com', ST_SetSRID(ST_MakePoint(114.614, -28.778), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[114.614,-28.778]}'::jsonb, NULL),
+('Nouméa', 'kitesurf.png', 'https://www.noumealive.com', ST_SetSRID(ST_MakePoint(166.458, -22.275), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[166.458,-22.275]}'::jsonb, NULL),
+('Natadola - Fiji', 'kitesurf.png', NULL, ST_SetSRID(ST_MakePoint(177.283, -18.100), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[177.283,-18.1]}'::jsonb, NULL),
+('Papenoo - Tahiti', 'windsurf.png', 'https://www.tahiticam.com', ST_SetSRID(ST_MakePoint(-149.416, -17.533), 4326),
+ true, false, true, true, false, '{"type":"Point","coordinates":[-149.416,-17.533]}'::jsonb, NULL);
 
 -- Almacenamiento de imagenes como avatars
 -- En storage crear una carpeta File denominada avatas para almacenar todos los avatares de usarios. 
@@ -303,3 +353,126 @@ for all
 to service_role
 using (true)
 with check (true);
+
+
+CREATE TABLE public.clima_grid (
+    id               BIGSERIAL PRIMARY KEY,
+    lat              NUMERIC(7,4)   NOT NULL,
+    lng              NUMERIC(8,4)   NOT NULL,
+    fecha_hora       TIMESTAMPTZ    NOT NULL,
+    velocidad_viento NUMERIC(6,2)   DEFAULT 0,   -- nudos
+    direccion_viento NUMERIC(5,1)   DEFAULT 0,   -- grados 0-360
+    racha_viento     NUMERIC(6,2)   DEFAULT 0,   -- nudos
+    temperatura      NUMERIC(5,1)   DEFAULT 0,   -- °C
+    precipitacion    NUMERIC(6,2)   DEFAULT 0,   -- mm
+    altura_ola       NUMERIC(5,2)   DEFAULT 0,   -- metros
+    direccion_ola    NUMERIC(5,1)   DEFAULT 0,   -- grados 0-360
+    periodo_ola      NUMERIC(5,1)   DEFAULT 0,   -- segundos
+    created_at       TIMESTAMPTZ    DEFAULT now()
+);
+
+
+CREATE INDEX idx_clima_grid_lat_lng
+    ON public.clima_grid (lat, lng);
+
+
+CREATE INDEX idx_clima_grid_fecha
+    ON public.clima_grid (fecha_hora DESC);
+
+
+
+ALTER TABLE public.clima
+    ADD CONSTRAINT clima_spot_fecha_unique
+    UNIQUE (spot_id, fecha_hora);
+
+
+CREATE INDEX idx_clima_spot_fecha
+    ON public.clima (spot_id, fecha_hora);
+
+
+
+ALTER TABLE public.clima_grid ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "clima_grid_lectura_publica"
+    ON public.clima_grid
+    FOR SELECT
+    USING (true);
+
+CREATE POLICY "clima_grid_escritura_service"
+    ON public.clima_grid
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+
+-- ── clima (política de escritura si no existe) ──────────────
+ALTER TABLE public.clima ENABLE ROW LEVEL SECURITY;
+
+-- Lectura: usuarios autenticados ven todos los datos de clima
+CREATE POLICY "clima_lectura_autenticados"
+    ON public.clima
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- Lectura anónima (para usuarios no logueados que ven el mapa)
+CREATE POLICY "clima_lectura_anonimos"
+    ON public.clima
+    FOR SELECT
+    TO anon
+    USING (true);
+
+-- Escritura solo service_role
+CREATE POLICY "clima_escritura_service"
+    ON public.clima
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+
+-- ============================================================
+--  FUNCIÓN: obtener_grid_actual
+--  Devuelve el snapshot más reciente del grid.
+--  La app llama a esta función RPC en vez de hacer un SELECT
+--  con filtros complejos → más eficiente y seguro.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.obtener_grid_actual(
+    p_min_lat NUMERIC DEFAULT -90,
+    p_max_lat NUMERIC DEFAULT  90,
+    p_min_lng NUMERIC DEFAULT -180,
+    p_max_lng NUMERIC DEFAULT  180
+)
+RETURNS TABLE (
+    lat              NUMERIC,
+    lng              NUMERIC,
+    velocidad_viento NUMERIC,
+    direccion_viento NUMERIC,
+    racha_viento     NUMERIC,
+    temperatura      NUMERIC,
+    precipitacion    NUMERIC,
+    altura_ola       NUMERIC,
+    direccion_ola    NUMERIC,
+    periodo_ola      NUMERIC
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT
+        lat, lng,
+        velocidad_viento, direccion_viento, racha_viento,
+        temperatura, precipitacion,
+        altura_ola, direccion_ola, periodo_ola
+    FROM public.clima_grid
+    WHERE
+        -- Solo el snapshot más reciente
+        fecha_hora = (SELECT MAX(fecha_hora) FROM public.clima_grid)
+        -- Solo el bbox visible del mapa
+        AND lat BETWEEN p_min_lat AND p_max_lat
+        AND lng BETWEEN p_min_lng AND p_max_lng
+    ORDER BY lat, lng;
+$$;
+
+-- Permisos para que la app pueda llamar a la función
+GRANT EXECUTE ON FUNCTION public.obtener_grid_actual TO anon;
+GRANT EXECUTE ON FUNCTION public.obtener_grid_actual TO authenticated;

@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/auth_service.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/views/register_page.dart';
-import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/register_page.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'package:tfg_clima_malaga/utils/validadores.dart';
 
 class DrawerVisitante extends StatefulWidget {

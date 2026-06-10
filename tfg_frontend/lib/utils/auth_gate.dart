@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/views/login_page.dart';
-import 'package:tfg_clima_malaga/views/principal.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/login_page.dart';
+import 'package:tfg_clima_malaga/views/principal/principal.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -17,6 +17,16 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   void initState() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null && mounted) {
+        // Usuario confirmado y logueado → ir a pantalla principal
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),
+        );
+      }
+    });
     super.initState();
     _cargarDatosIniciales();
   }
@@ -36,7 +46,6 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _cargarTodo() async {
     await UserManager().cargarPerfilSiExiste();
     await SpotManager().inicializar();
-
   }
 
   @override

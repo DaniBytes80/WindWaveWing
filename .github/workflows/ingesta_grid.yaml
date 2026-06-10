@@ -1,0 +1,29 @@
+name: Ingesta de grid meteorológico
+
+on:
+  schedule:
+    # Grid Open-Meteo global: cada 4 horas
+    - cron: "0 */4 * * *"
+  workflow_dispatch:   # permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  ingesta_grid:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ingestar grid global (Open-Meteo)
+        run: python ingesta_grid.py

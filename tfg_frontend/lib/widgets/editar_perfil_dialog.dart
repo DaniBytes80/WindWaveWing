@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class EditarPerfilDialog extends StatefulWidget {
   const EditarPerfilDialog({super.key});
@@ -101,24 +101,20 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
     final user = UserManager().usuario;
     if (user == null) return;
 
-    // ============================================================
-    // VALIDACIONES
-    // ============================================================
-
-    final nombre = nombreCtrl.text.trim();
+    final nombre = nombreCtrl.text.trim(); // VALIDACIONES
     final telefono = telefonoCtrl.text.trim();
     final pesoTexto = pesoCtrl.text.trim();
 
-    // Nombre obligatorio
     if (nombre.isEmpty) {
+      // Nombre obligatorio
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("El nombre no puede estar vacío.")),
       );
       return;
     }
 
-    // Teléfono numérico o vacío
     if (telefono.isNotEmpty && !RegExp(r'^[0-9]+$').hasMatch(telefono)) {
+      // Teléfono numérico o vacío
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("El teléfono solo puede contener números."),
@@ -127,8 +123,9 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
       return;
     }
 
-    // Peso numérico o vacío
-    final int? pesoKg = pesoTexto.isEmpty ? null : int.tryParse(pesoTexto);
+    final int? pesoKg = pesoTexto.isEmpty
+        ? null
+        : int.tryParse(pesoTexto); // Peso numérico o vacío
 
     if (pesoTexto.isNotEmpty && pesoKg == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,11 +134,7 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
       return;
     }
 
-    // ============================================================
-    // AVATAR
-    // ============================================================
-
-    String? avatarUrl = avatarCtrl.text.trim();
+    String? avatarUrl = avatarCtrl.text.trim(); // AVATAR
 
     if (imagenLocal != null) {
       await borrarAvatarDeStorage(user.avatarUrl);
@@ -153,11 +146,7 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
       avatarUrl = null;
     }
 
-    // ============================================================
-    // GUARDAR EN SUPABASE
-    // ============================================================
-
-    await supabase
+    await supabase // GUARDAR EN SUPABASE
         .from("Perfiles")
         .update({
           "nombre": nombre,

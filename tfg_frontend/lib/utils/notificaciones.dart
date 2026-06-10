@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 OverlayEntry? _ventanaInactividadActiva;
 

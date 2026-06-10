@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/views/mis_favoritos_page.dart';
-import 'package:tfg_clima_malaga/views/tema.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/mis_favoritos_page.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'package:tfg_clima_malaga/widgets/editar_perfil_dialog.dart';
-import 'package:tfg_clima_malaga/views/principal.dart';
+import 'package:tfg_clima_malaga/views/principal/principal.dart';
 import 'package:tfg_clima_malaga/main.dart';
 
 // ⭐ IMPORTA TUS PÁGINAS REALES
-import 'package:tfg_clima_malaga/views/alertas/mis_alertas_page.dart';
-import 'package:tfg_clima_malaga/views/material/mis_materiales_page.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/alertas/mis_alertas_page.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/material/mis_materiales_page.dart';
 
 class DrawerUsuario extends StatefulWidget {
   const DrawerUsuario({super.key});

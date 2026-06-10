@@ -8,7 +8,8 @@ class ClimaModelo {
   final double periodoOla;
   final String direccionOla;
 
-  // ⭐ NUEVO CAMPO
+  final double temperatura;
+  final double humedad;
   final double probabilidadLluvia;
 
   ClimaModelo({
@@ -20,6 +21,8 @@ class ClimaModelo {
     required this.alturaOla,
     required this.periodoOla,
     required this.direccionOla,
+    required this.temperatura,
+    required this.humedad,
     required this.probabilidadLluvia,
   });
 
@@ -27,17 +30,17 @@ class ClimaModelo {
     return ClimaModelo(
       spotId: json['spot_id'],
       fechaHora: DateTime.parse(json['fecha_hora']),
-      velocidadViento: (json['velocidad_viento'] as num).toDouble(),
+      velocidadViento: (json['velocidad_viento'] as num?)?.toDouble() ?? 0.0,
       direccionViento: json['direccion_viento'] ?? '',
-      rachaViento: (json['racha_viento'] as num).toDouble(),
-      alturaOla: (json['altura_ola'] as num).toDouble(),
-      periodoOla: (json['periodo_ola'] as num).toDouble(),
+      rachaViento: (json['racha_viento'] as num?)?.toDouble() ?? 0.0,
+      alturaOla: (json['altura_ola'] as num?)?.toDouble() ?? 0.0,
+      periodoOla: (json['periodo_ola'] as num?)?.toDouble() ?? 0.0,
       direccionOla: json['direccion_ola'] ?? '',
 
-      // ⭐ NUEVO MAPEADO
-      probabilidadLluvia: json['probabilidad_lluvia'] != null
-          ? (json['probabilidad_lluvia'] as num).toDouble()
-          : 0.0,
+      temperatura: (json['temperatura'] as num?)?.toDouble() ?? 0.0,
+      humedad: (json['humedad'] as num?)?.toDouble() ?? 0.0,
+      probabilidadLluvia:
+          (json['probabilidad_lluvia'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

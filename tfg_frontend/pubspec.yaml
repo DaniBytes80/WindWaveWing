@@ -22,32 +22,40 @@ dependencies:
   json_annotation: ^4.11.0
   geobase: ^1.5.0
   provider: ^6.1.5+1
-  image_picker: ^1.2.2
+  image_picker: ^1.1.2
+# Dependencias de autenticación
+  google_sign_in: ^6.2.1
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
-  maplibre_gl: ^0.26.1
-  local_auth: ^3.0.1
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^9.2.2
 
+# Dependencias para mostrar la webcam
+  flutter_inappwebview: ^6.1.5
+  video_player: ^2.11.1
+# Dependencias del mapa
+  flutter_map: ^7.0.2          # el mapa
+  flutter_map_cache: ^1.5.0    # caché de tiles offline
+  latlong2: ^0.9.1             # coordenadas
+
+  mbtiles: ^0.3.0              # tiles en SQLite (offline España)
+  hive_flutter: ^1.1.0        # almacenamiento local para caché de tiles
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
 
-
 flutter:
-
   uses-material-design: true
   assets:
-    - assets/images/wwwIntro.png
-    - assets/images/wwwIcono2.png
+    - assets/images/
+    - assets/icons/
 
-    - assets/images/pointSurf.png
-    - assets/images/icoViento.gif
-    - assets/images/icoOla.gif
-    - assets/images/icoTemperatura.gif
-    - assets/images/icoLluvia.gif
-
-    - assets/mapa/cleansport_style.json
-    - assets/mapa/windwave_ocean_premium.json
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 21
