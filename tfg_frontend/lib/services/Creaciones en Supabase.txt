@@ -1,0 +1,478 @@
+Una vez creado el proyecto en Supabase, se crean las siguientes tablas. 
+
+Tabla de Usuario:
+La tabla de usuario está vinculada con la auth.users del sistema de Supabase por motivos de gestión
+de seguridad de los mismos.
+
+create table public."Perfiles" (
+  nombre character varying null,
+  email character varying not null,
+  rol character varying not null,
+  fecha_registro timestamp with time zone not null default now(),
+  telefono character varying null,
+  surf boolean null default false,
+  kite_surf boolean null default false,
+  windsurf boolean null default false,
+  wing boolean null default false,
+  sail boolean null default false,
+  id uuid not null default auth.uid (),
+  avatar_url text null,
+  constraint Perfiles_pkey primary key (id),
+  constraint Perfiles_email_key unique (email)
+) TABLESPACE pg_default;
+
+Tabla de Spots y tabla favoritos_spots:
+create table public.spot (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  nombre text not null,
+  icono text null,
+  cam_url text null,
+  point geography not null,
+  is_surf boolean null,
+  is_kitesurf boolean null,
+  is_windsurf boolean null,
+  is_wing boolean null,
+  is_sail boolean null,
+  created_at timestamp with time zone not null default now(),
+  pointjson jsonb null,
+  id_boya text null,
+  constraint spot_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create table public.clima (
+  spot_id uuid null,
+  fecha_hora timestamp with time zone not null,
+  velocidad_viento double precision null,
+  direccion_viento text null,
+  racha_viento double precision null,
+  altura_ola double precision null,
+  periodo_ola double precision null,
+  direccion_ola text null,
+  temperatura double precision null,
+  humedad double precision null,
+  probabilidad_lluvia double precision null,
+  id uuid not null default gen_random_uuid (),
+  constraint clima_pkey primary key (id),
+  constraint clima_unique unique (spot_id, fecha_hora),
+  constraint clima_spot_id_fkey foreign KEY (spot_id) references spot (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+-- Politicas de la tabla clima
+ALTER TABLE public.clima ENABLE ROW LEVEL SECURITY;
+ 
+CREATE POLICY "Allow insert for authenticated"
+ON clima
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Allow select for authenticated"
+ON clima
+FOR SELECT
+TO authenticated
+USING (true); -- O verifica auth.uid() = user_id
+
+CREATE POLICY "Allow update for authenticated"
+ON clima
+FOR UPDATE
+TO authenticated
+WITH CHECK (true);
+
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE clima TO postgres, anon, authenticated, service_role;   
+
+-- Creación de la tabla spots favoritos.
+create table public.favoritos_spots (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  perfil_id uuid not null,
+  spot_id uuid not null,
+  created_at timestamp with time zone not null default now(),
+  constraint favoritos_spots_pkey primary key (id),
+  constraint favoritos_spots_perfil_id_spot_id_key unique (perfil_id, spot_id),
+  constraint favoritos_spots_perfil_id_fkey foreign KEY (perfil_id) references "Perfiles" (id) on delete CASCADE,
+  constraint favoritos_spots_spot_id_fkey foreign KEY (spot_id) references spot (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+Se ha creado con el siguiente script.
+
+-- Habilitamos la extensión para generar UUIDs
+create extension if not exists "uuid-ossp";
+
+-- Creamos la tabla de spots primero
+create table public.spot (
+  id uuid primary key default uuid_generate_v4(), 
+  nombre text not null,
+  icono text,
+  cam_url text,
+  point geography(POINT, 4326) not null,
+  is_surf boolean default null,
+  is_kitesurf boolean default null,
+  is_windsurf boolean default null,
+  is_wing boolean default null,
+  is_sale boolean default null,
+  created_at timestamp with time zone default now() not null
+);
+
+-- Creamos la tabla de favoritos (Relación muchos a muchos)
+-- Asegúrate de que la tabla "Perfiles" tenga una columna 'id' que sea UUID
+create table public.favoritos_spots (
+  id uuid primary key default uuid_generate_v4(),
+  perfil_id uuid references public."Perfiles"(id) on delete cascade not null,
+  spot_id uuid references public.spot(id) on delete cascade not null,
+  created_at timestamp with time zone default now() not null,
+  unique(perfil_id, spot_id)
+);
+
+Políticas de seguridad de RSL de Supabase a nivel de perfiles.
+-- 1. Habilitar RLS en la tabla (si no lo está ya)
+ALTER TABLE public."Perfiles" ENABLE ROW LEVEL SECURITY;
+
+-- 2. Regla para CONSULTAR (SELECT)
+-- Permite que cualquier usuario registrado (o incluso visitantes) vea los perfiles
+-- Útil para buscadores de spots/amigos
+CREATE POLICY "Los perfiles son visibles para usuarios autenticados" 
+ON public."Perfiles" 
+FOR SELECT 
+TO authenticated 
+USING (true);
+
+-- 3. Regla para INSERTAR (INSERT)
+-- El usuario solo puede crear un perfil si el ID coincide con su ID de autenticación
+CREATE POLICY "Los usuarios solo crean su propio perfil" 
+ON public."Perfiles" 
+FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = id);
+
+-- 4. Regla para MODIFICAR (UPDATE)
+-- Solo el dueño del perfil (donde auth.uid() coincide con id) puede editar
+CREATE POLICY "Los usuarios solo editan su propio perfil" 
+ON public."Perfiles" 
+FOR UPDATE 
+TO authenticated 
+USING (auth.uid() = id) 
+WITH CHECK (auth.uid() = id);
+
+-- 5. Regla para ELIMINAR (DELETE)
+-- Solo el dueño del perfil puede borrar su cuenta
+CREATE POLICY "Los usuarios solo borran su propio perfil" 
+ON public."Perfiles" 
+FOR DELETE 
+TO authenticated 
+USING (auth.uid() = id);
+
+
+--  Trigger en la tabla de auth.users que crea un registro en la tabla public.Perfiles
+-- con el id,nombre y (email o telefono) para poder registrarse. Además de rol y avatar si los hay.
+-- En el caso de activar el registro mediante google o Apple tambien se permite.
+
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public."Perfiles" (id, email, nombre, rol, telefono, avatar_url)
+  values (
+    new.id, 
+    new.email, 
+     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', 'Usuario Nuevo'),
+    'usuario',
+    new.phone,
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+
+-- Inserción de spot
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Málaga', 'POINT(36.700271 -4.434400)', true, false, false, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Hoyo19', 'POINT(36.714971 -3.551889)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playa Granada', 'POINT(36.717905 -3.577939)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Salobreña', 'POINT(36.723753 -3.577939)', true, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rules', 'POINT(36.871410 -3.482298)', false, false, true, true, false);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Torrox', 'POINT(36.735512 -3.987004)', false, true, true, true, false);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Rincón de la Victoria', 'POINT(36.714105 -4.292650)', true, false, false, false, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Guadalmar', 'POINT(36.657960 -4.465166)', false, true, true, true, true);
+insert into public.spot (nombre, point, is_surf, is_kitesurf, is_windsurf,is_wing,is_sail) values ('Playamar', 'POINT(36.633802 -4.486064)', false, false, true, true, true);
+INSERT INTO public.spot (nombre,icono,cam_url,point,is_surf,is_kitesurf,is_windsurf,is_wing,is_sail,pointjson,id_boya) VALUES
+('Leucate - La Franqui','windsurf.png','https://www.windcam.fr/leucate',ST_SetSRID(ST_MakePoint(3.033, 42.925), 4326),
+ false, true, true, true, false,'{"type":"Point","coordinates":[3.033,42.925]}'::jsonb,NULL),
+('Viganj','windsurf.png','https://www.viganjlive.com',ST_SetSRID(ST_MakePoint(17.133, 42.987), 4326),
+ false, false, true, true, false,'{"type":"Point","coordinates":[17.133,42.987]}'::jsonb,NULL),
+('Karpathos - Chicken Bay','windsurf.png','https://www.mikri-karpathos.com/livecam',ST_SetSRID(ST_MakePoint(27.213, 35.507), 4326),
+ false, true, true, true, false,'{"type":"Point","coordinates":[27.213,35.507]}'::jsonb, NULL),
+('Silvaplana','windsurf.png','https://www.silvaplana.ch/livecams', ST_SetSRID(ST_MakePoint(9.796, 46.459), 4326),
+ false, false, true, true, false,'{"type":"Point","coordinates":[9.796,46.459]}'::jsonb, NULL),
+('Hanstholm', 'windsurf.png', 'https://www.hanstholm.dk/live', ST_SetSRID(ST_MakePoint(8.616, 57.116), 4326),
+ true, false, true, true, false, '{"type":"Point","coordinates":[8.616,57.116]}'::jsonb, NULL),
+('Langebaan', 'windsurf.png', 'https://www.langebaanlive.com', ST_SetSRID(ST_MakePoint(18.033, -33.090), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[18.033,-33.09]}'::jsonb, NULL),
+('Dakhla Lagoon', 'kitesurf.png', 'https://www.dakhlaattitude.ma/livecam', ST_SetSRID(ST_MakePoint(-15.783, 23.866), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-15.783,23.866]}'::jsonb, NULL),
+('Essaouira', 'windsurf.png', 'https://www.mogadorlive.com', ST_SetSRID(ST_MakePoint(-9.763, 31.508), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-9.763,31.508]}'::jsonb, NULL),
+('Cape Town - Blouberg', 'windsurf.png', 'https://www.capetownwebcam.com', ST_SetSRID(ST_MakePoint(18.466, -33.800), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[18.466,-33.8]}'::jsonb, NULL),
+('Le Morne', 'kitesurf.png', 'https://www.lemorneview.com', ST_SetSRID(ST_MakePoint(57.310, -20.455), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[57.31,-20.455]}'::jsonb, NULL),
+('Maui - Kanaha', 'windsurf.png', 'https://www.mauiwindcam.com', ST_SetSRID(ST_MakePoint(-156.438, 20.898), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-156.438,20.898]}'::jsonb, NULL),
+('Cabarete', 'kitesurf.png', 'https://www.cabaretewebcam.com', ST_SetSRID(ST_MakePoint(-70.412, 19.749), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-70.412,19.749]}'::jsonb, NULL),
+('Jericoacoara', 'windsurf.png', 'https://www.jerilive.com', ST_SetSRID(ST_MakePoint(-40.512, -2.796), 4326),
+ false, true, true, true, false, '{"type":"Point","coordinates":[-40.512,-2.796]}'::jsonb, NULL),
+('La Ventana', 'kitesurf.png', 'https://www.laventanacam.com', ST_SetSRID(ST_MakePoint(-109.992, 24.042), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[-109.992,24.042]}'::jsonb, NULL),
+('Hood River - The Gorge', 'windsurf.png', 'https://www.thegorgecam.com', ST_SetSRID(ST_MakePoint(-121.512, 45.708), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[-121.512,45.708]}'::jsonb, NULL),
+('Boracay - Bulabog Beach', 'kitesurf.png', 'https://www.boracaylive.com', ST_SetSRID(ST_MakePoint(121.928, 11.967), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[121.928,11.967]}'::jsonb, NULL),
+('Mui Ne', 'kitesurf.png', 'https://www.muinecam.com', ST_SetSRID(ST_MakePoint(108.283, 10.933), 4326),
+ false, true, true, false, false, '{"type":"Point","coordinates":[108.283,10.933]}'::jsonb, NULL),
+('Kalpitiya', 'kitesurf.png', 'https://www.kalpitiyawebcam.com', ST_SetSRID(ST_MakePoint(79.766, 8.233), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[79.766,8.233]}'::jsonb, NULL),
+('Masirah Island', 'kitesurf.png', NULL, ST_SetSRID(ST_MakePoint(58.883, 20.600), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[58.883,20.6]}'::jsonb, NULL),
+('Omaezaki', 'windsurf.png', 'https://www.omaezakicam.jp', ST_SetSRID(ST_MakePoint(138.216, 34.600), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[138.216,34.6]}'::jsonb, NULL),
+('Currumbin - Gold Coast', 'kitesurf.png', 'https://www.coastalwatch.com', ST_SetSRID(ST_MakePoint(153.505, -28.165), 4326),
+ true, true, false, true, false, '{"type":"Point","coordinates":[153.505,-28.165]}'::jsonb, NULL),
+('Geraldton', 'windsurf.png', 'https://www.geraldtoncam.com', ST_SetSRID(ST_MakePoint(114.614, -28.778), 4326),
+ false, false, true, true, false, '{"type":"Point","coordinates":[114.614,-28.778]}'::jsonb, NULL),
+('Nouméa', 'kitesurf.png', 'https://www.noumealive.com', ST_SetSRID(ST_MakePoint(166.458, -22.275), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[166.458,-22.275]}'::jsonb, NULL),
+('Natadola - Fiji', 'kitesurf.png', NULL, ST_SetSRID(ST_MakePoint(177.283, -18.100), 4326),
+ false, true, false, true, false, '{"type":"Point","coordinates":[177.283,-18.1]}'::jsonb, NULL),
+('Papenoo - Tahiti', 'windsurf.png', 'https://www.tahiticam.com', ST_SetSRID(ST_MakePoint(-149.416, -17.533), 4326),
+ true, false, true, true, false, '{"type":"Point","coordinates":[-149.416,-17.533]}'::jsonb, NULL);
+
+-- Almacenamiento de imagenes como avatars
+-- En storage crear una carpeta File denominada avatas para almacenar todos los avatares de usarios. 
+-- Creación de políticas de archivos 
+create policy "Cualquiera puede ver los avatares"
+on storage.objects
+for select
+using (bucket_id = 'avatars');
+
+create policy "El usuario solo puede subir su propio avatar"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "El usuario solo puede actualizar su propio avatar"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+)
+with check (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "El usuario solo puede borrar su propio avatar"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create table public."AlertasUsuario" (
+    id uuid not null default gen_random_uuid(),
+    user_id uuid not null,
+    spot_id uuid not null,
+    
+    -- Condición meteorológica a evaluar
+    parametro text not null,          -- viento, racha, ola, direccion, periodo, etc.
+    operador text not null,           -- >, <, >=, <=, =
+    valor numeric not null,           -- valor numérico a comparar
+    
+    -- Opcional: material preferido para esta alerta
+    material_id uuid null,
+    
+    -- Estado de la alerta
+    activa boolean not null default true,
+    
+    -- Texto opcional para mostrar al usuario
+    nombre text null,
+    descripcion text null,
+    
+    fecha_creacion timestamp without time zone not null default now(),
+    
+    constraint AlertasUsuario_pkey primary key (id),
+    
+    constraint AlertasUsuario_user_id_fkey
+        foreign key (user_id) references "Perfiles" (id) on delete cascade,
+    
+    constraint AlertasUsuario_spot_id_fkey
+        foreign key (spot_id) references spot (id) on delete cascade,
+    
+    constraint AlertasUsuario_material_id_fkey
+        foreign key (material_id) references "MaterialUsuario" (id) on delete set null
+);
+
+create index if not exists idx_alertasusuario_user
+    on public."AlertasUsuario" (user_id);
+
+create index if not exists idx_alertasusuario_spot
+    on public."AlertasUsuario" (spot_id);
+
+create index if not exists idx_alertasusuario_parametro
+    on public."AlertasUsuario" (parametro);
+ alter table public."AlertasUsuario" enable row level security;
+create policy "Permitir lectura de alertas del usuario"
+on public."AlertasUsuario"
+for select
+to authenticated
+using (user_id = auth.uid());
+create policy "Permitir crear alertas propias"
+on public."AlertasUsuario"
+for insert
+to authenticated
+with check (user_id = auth.uid());
+create policy "Permitir actualizar alertas propias"
+on public."AlertasUsuario"
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+create policy "Permitir borrar alertas propias"
+on public."AlertasUsuario"
+for delete
+to authenticated
+using (user_id = auth.uid());
+create policy "Backend acceso total"
+on public."AlertasUsuario"
+for all
+to service_role
+using (true)
+with check (true);
+
+
+CREATE TABLE public.clima_grid (
+    id               BIGSERIAL PRIMARY KEY,
+    lat              NUMERIC(7,4)   NOT NULL,
+    lng              NUMERIC(8,4)   NOT NULL,
+    fecha_hora       TIMESTAMPTZ    NOT NULL,
+    velocidad_viento NUMERIC(6,2)   DEFAULT 0,   -- nudos
+    direccion_viento NUMERIC(5,1)   DEFAULT 0,   -- grados 0-360
+    racha_viento     NUMERIC(6,2)   DEFAULT 0,   -- nudos
+    temperatura      NUMERIC(5,1)   DEFAULT 0,   -- °C
+    precipitacion    NUMERIC(6,2)   DEFAULT 0,   -- mm
+    altura_ola       NUMERIC(5,2)   DEFAULT 0,   -- metros
+    direccion_ola    NUMERIC(5,1)   DEFAULT 0,   -- grados 0-360
+    periodo_ola      NUMERIC(5,1)   DEFAULT 0,   -- segundos
+    created_at       TIMESTAMPTZ    DEFAULT now()
+);
+
+
+CREATE INDEX idx_clima_grid_lat_lng
+    ON public.clima_grid (lat, lng);
+
+
+CREATE INDEX idx_clima_grid_fecha
+    ON public.clima_grid (fecha_hora DESC);
+
+
+
+ALTER TABLE public.clima
+    ADD CONSTRAINT clima_spot_fecha_unique
+    UNIQUE (spot_id, fecha_hora);
+
+
+CREATE INDEX idx_clima_spot_fecha
+    ON public.clima (spot_id, fecha_hora);
+
+
+
+ALTER TABLE public.clima_grid ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "clima_grid_lectura_publica"
+    ON public.clima_grid
+    FOR SELECT
+    USING (true);
+
+CREATE POLICY "clima_grid_escritura_service"
+    ON public.clima_grid
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+
+-- ── clima (política de escritura si no existe) ──────────────
+ALTER TABLE public.clima ENABLE ROW LEVEL SECURITY;
+
+-- Lectura: usuarios autenticados ven todos los datos de clima
+CREATE POLICY "clima_lectura_autenticados"
+    ON public.clima
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- Lectura anónima (para usuarios no logueados que ven el mapa)
+CREATE POLICY "clima_lectura_anonimos"
+    ON public.clima
+    FOR SELECT
+    TO anon
+    USING (true);
+
+-- Escritura solo service_role
+CREATE POLICY "clima_escritura_service"
+    ON public.clima
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+
+-- ============================================================
+--  FUNCIÓN: obtener_grid_actual
+--  Devuelve el snapshot más reciente del grid.
+--  La app llama a esta función RPC en vez de hacer un SELECT
+--  con filtros complejos → más eficiente y seguro.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.obtener_grid_actual(
+    p_min_lat NUMERIC DEFAULT -90,
+    p_max_lat NUMERIC DEFAULT  90,
+    p_min_lng NUMERIC DEFAULT -180,
+    p_max_lng NUMERIC DEFAULT  180
+)
+RETURNS TABLE (
+    lat              NUMERIC,
+    lng              NUMERIC,
+    velocidad_viento NUMERIC,
+    direccion_viento NUMERIC,
+    racha_viento     NUMERIC,
+    temperatura      NUMERIC,
+    precipitacion    NUMERIC,
+    altura_ola       NUMERIC,
+    direccion_ola    NUMERIC,
+    periodo_ola      NUMERIC
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT
+        lat, lng,
+        velocidad_viento, direccion_viento, racha_viento,
+        temperatura, precipitacion,
+        altura_ola, direccion_ola, periodo_ola
+    FROM public.clima_grid
+    WHERE
+        -- Solo el snapshot más reciente
+        fecha_hora = (SELECT MAX(fecha_hora) FROM public.clima_grid)
+        -- Solo el bbox visible del mapa
+        AND lat BETWEEN p_min_lat AND p_max_lat
+        AND lng BETWEEN p_min_lng AND p_max_lng
+    ORDER BY lat, lng;
+$$;
+
+-- Permisos para que la app pueda llamar a la función
+GRANT EXECUTE ON FUNCTION public.obtener_grid_actual TO anon;
+GRANT EXECUTE ON FUNCTION public.obtener_grid_actual TO authenticated;

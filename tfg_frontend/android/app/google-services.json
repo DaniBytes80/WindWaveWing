@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305013403016",
+    "project_id": "windwavewing",
+    "storage_bucket": "windwavewing.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305013403016:android:7396841b9a7a729608de3d",
+        "android_client_info": {
+          "package_name": "com.windwavewing.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDA2pn2OwGpwsMDDQcQYj-D8YvPkFO8kmA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

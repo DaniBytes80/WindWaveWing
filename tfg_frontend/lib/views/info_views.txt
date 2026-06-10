@@ -1,0 +1,65 @@
+En esta sección se has creado las distintas vistas de la app. 
+
+Para mayor comprensión se han craedo secciones a modo de carpetas con los distintos widgets.
+La aplicación comienza en main.dart y se redirige al widget _ventanaIncio que se encuentra 
+ubicada en principal.dart.
+La sección principal está compuesto:
+- Principal.dart está compuesto por:
+    - Appbar con datos del spot y un drawer para los perfiles de usuario.
+    - Widget al fondo que es un mapa posicionado por defecto en málaga y se desplaza de spot 
+        en spot mostrando distintas capas meteorológicas.
+    - Buscador como su propio nombre indica se trata de seleccionar otros spot del sistema.
+    - Tabla clima consiste en mostrar una tabla con los valores climatológicos del spot actual
+    - Menu selector de capas meteorológicas
+- www_buscador.dart es el wiget que conforme se escribe en él sugiere spot que conincidan con 
+    el nombre del texto. Al aceptar actualiza la app para que muestre datos de spot.
+- webcam_viewer.dart es el widget llamado desde la Appbar con el que muestra como ventana
+    emergente la dirección de la cam en formato video. En la Appbar lo que se muestra es 
+    una estrella para seleccionar y deseleccionar como favorito, el nombre del spot y un icono 
+    webcam en el caso de que el spot disponga de enlace.
+- menu_animado.dart muestra el widget con un icono de la app en el que despliega cuatro enlaces
+    para seleccionar la capa a mostrar (viento, olas, temperatura o lluvia).
+- menu_usuario.dart es el widget encargado de mostrar el menu al asuario. Para ello utiliza 
+    la sección menu_principal_usuario
+    - login_page.dart considera por defecto un usuario visitante. Muestra un formulario para 
+        acceder con el correo electrónico y contraseña, o bien con la cuenta Google o bien con 
+        la biometría del dispositivo. 
+        En el caso no estar registrado lanza el registro de usuario.
+    - register_page.dart muestra un formulario para que el usuario se registre. En el caso de 
+        que el usuario introduzca correctamente los datos, se envía un mensaje al correo 
+        electrónico para su validadción y posterior creación de usuario en la base de datos.
+    - profile_page
+    - mis_favoritos_page.dart widget que muestra una ventana emergente con los spots favorios 
+    del usuario. 
+    - profile_page.dart muestra los datos del usuario para poder actualizar sus datos.
+        dispone del enlace que llama a mis_favoritos_page.dart para mostrar los spots favoritos 
+        del usuario. 
+        - Materiales son es la configuración de los materiales que dispone el usuario. Para poder 
+            asesorar al usuario, se necesita saber el peso, el nivel en cada disciplina y el 
+            material que dispone. Para poder gestionar estas ventas y datos se necesita la 
+            sección (carpeta) material. 
+            - mis_materiale_page.dart muestra los materales creados para consultar, modificar o 
+                eliminar. Además, permite crear materiale nuevos.
+            - crear_material_page.dart es un menu en el cual se crea el material disponible.
+            - editar_materia_page.dart es un menu que permite modificar un material creado.
+        - alertas de usuario se puede acceder desde profile_page.dart para gestionar alertas de 
+            aviso de estado ideal para navegar con un material específico.
+            -mis_alertas_page.dart permite mostrar, editar, activar, desactivar y crear alertas.
+            - crear_alerta_page.dart muestra el menu para crear una alerta.
+            - editar_alerta_page.dart muestra el menu para poder editar una alerta.
+- www_tabla_clima.dart utiliza la sección clima con 
+    - clima_tabla_horas.dart crea una tabla con los datos del dia seleccionado expresado en horas.
+    - clima_colores.dart define los colores de las capas 
+    - clima_resumen.dart realiza una unificación de datos para poder mostrarlos.
+    - clima_utils.dart dispone de distintas funciones necesarias para los metodos anteriores.
+-www_map_screen.dart es el widget que muestra el mapa. para mostrar las animaciones de las 
+    condiciones climáticas necesita crear capas encima de él. Para ello se ha creado la secciones
+    layer. Para la representación se utilizan los datos que están en la base de datos. Cogiendo 
+    los datos en directo de estaciones meteorológicas en el caso de disponer de un spot una 
+    estación.
+    En el caso de ser otra zona del mapa primeramente coge datos de AEMET y Puertos del estado. 
+    Para los puntos en los que no se dispongan de datos antev1               es en formato mapa de calor 
+        representando las nubes-precipitaciones y temperaturas.
+    - wave_layer.dart y wind_layer.dart muestran animaciones con flechas o puntos describiendo la
+        dirección de la ola o del viento.
+                 x,c

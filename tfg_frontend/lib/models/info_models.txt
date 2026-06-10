@@ -1,0 +1,2 @@
+En esta carpeta se han colocado los modelos de 
+daatos para los Spots meteorológicos
