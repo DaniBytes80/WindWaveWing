@@ -1,9 +1,6 @@
 """
-evaluar_alertas.py v3
-=====================
 Usa Firebase Cloud Messaging API V1 (la heredada está desactivada).
 Autenticación: cuenta de servicio de Firebase (JSON key).
-
 Secret necesario en GitHub:
   FIREBASE_SERVICE_ACCOUNT_JSON → contenido del JSON de la cuenta de  servicio
 """
@@ -20,10 +17,7 @@ FIREBASE_SA_JSON          = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-# ─────────────────────────────────────────────────────────────
 #  FCM API V1 — obtener token OAuth2 de la cuenta de servicio
-# ─────────────────────────────────────────────────────────────
-
 def _obtener_access_token():
     """Obtiene token OAuth2 usando la cuenta de servicio de Firebase."""
     try:
@@ -38,14 +32,14 @@ def _obtener_access_token():
         credentials.refresh(google.auth.transport.requests.Request())
         return credentials.token
     except Exception as e:
-        print(f"    ❌ Error obteniendo token OAuth2: {e}")
+        print(f" Error obteniendo token OAuth2: {e}")
         return None
 
 
 def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
     """Envía notificación push usando FCM API V1."""
     if not FIREBASE_SA_JSON:
-        print("    ⚠️  FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
+        print(" FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
         return False
 
     access_token = _obtener_access_token()
@@ -83,22 +77,17 @@ def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
             timeout=10,
         )
         if r.status_code == 200:
-            print(f"    ✅ Push enviado correctamente")
+            print(f" Push enviado correctamente")
             return True
         else:
-            print(f"    ❌ Error FCM V1: {r.status_code} → {r.text}")
+            print(f" Error FCM V1: {r.status_code} → {r.text}")
             return False
     except Exception as e:
-        print(f"    ❌ Error enviando push: {e}")
+        print(f" Error enviando push: {e}")
         return False
 
-
-# ─────────────────────────────────────────────────────────────
-#  FUENTE DE DATOS METEOROLÓGICOS
-# ─────────────────────────────────────────────────────────────
-
 def obtener_clima_spot(spot_id):
-    # Prioridad 1: estación propia (futuro)
+    # Prioridad 1: estación propia
     try:
         hace_15min = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
         r = supabase.table("mediciones_estacion") \
@@ -106,7 +95,7 @@ def obtener_clima_spot(spot_id):
             .gte("fecha_hora", hace_15min) \
             .order("fecha_hora", desc=True).limit(1).execute()
         if r.data:
-            print(f"    📡 Estación propia")
+            print(f" Estación propia")
             return r.data[0], "estacion"
     except Exception:
         pass
@@ -119,18 +108,14 @@ def obtener_clima_spot(spot_id):
             .gte("fecha_hora", hace_1h) \
             .order("fecha_hora", desc=True).limit(1).execute()
         if r.data:
-            print(f"    🌤  Tabla clima")
+            print(f" Tabla clima")
             return r.data[0], "clima"
     except Exception as e:
-        print(f"    ❌ Error clima: {e}")
+        print(f" Error clima: {e}")
 
     return None, None
 
-
-# ─────────────────────────────────────────────────────────────
 #  DATOS DE USUARIO Y REGLAS
-# ─────────────────────────────────────────────────────────────
-
 def obtener_perfil(user_id):
     try:
         r = supabase.table("Perfiles") \
@@ -182,11 +167,7 @@ def ya_notificado_reciente(user_id, spot_id, horas=3):
     except Exception:
         return False
 
-
-# ─────────────────────────────────────────────────────────────
 #  EVALUACIÓN
-# ─────────────────────────────────────────────────────────────
-
 def _en_rango(valor, minimo, maximo):
     if valor is None:
         return True
@@ -197,7 +178,6 @@ def _en_rango(valor, minimo, maximo):
     except Exception:
         return True
     return True
-
 
 def clima_cumple_regla(clima, regla):
     return all([
@@ -211,9 +191,7 @@ def material_cumple_regla(material, regla, peso_kg):
         return False
     detalle = material.get("MaterialDetalle")
     if isinstance(detalle, list):
-        # ✅ FIX: filtrar nulls de la lista
         detalle = next((d for d in detalle if d is not None), None)
-    # Sin detalle → solo validamos peso → aceptamos
     if not detalle:
         return True
     return all([ 
@@ -259,14 +237,9 @@ def registrar_generada(user_id, spot_id, material_id, mensaje):
     except Exception as e:
         print(f"    Error registrando: {e}")
 
-
-# ─────────────────────────────────────────────────────────────
 #  PROCESO PRINCIPAL
-# ─────────────────────────────────────────────────────────────
-
 def evaluar_alertas():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Evaluando alertas...")
-
     try:
         r = supabase.table("AlertasUsuario").select("*").eq("activa", True).execute()
         alertas = r.data or []
@@ -283,20 +256,20 @@ def evaluar_alertas():
         nivel      = alerta.get("nivel")
         nombre     = alerta.get("nombre", "Sin nombre")
 
-        print(f"\n  ▶ '{nombre}' | {disciplina}/{nivel}")
+        print(f"\n '{nombre}' | {disciplina}/{nivel}")
 
         if not disciplina or not nivel: continue
 
         perfil = obtener_perfil(user_id)
         if not perfil.get("notificaciones_activas", True):
-            print("    ℹ️  Notificaciones desactivadas"); continue
+            print(" Notificaciones desactivadas"); continue
 
         if ya_notificado_reciente(user_id, spot_id):
-            print("    ℹ️  Ya notificado en las últimas 3h"); continue
+            print(" Ya notificado en las últimas 3h"); continue
 
         clima, fuente = obtener_clima_spot(spot_id)
         if not clima:
-            print("    ⚠️  Sin datos de clima"); continue
+            print(" Sin datos de clima"); continue
 
         viento = clima.get("velocidad_viento", 0)
         ola    = clima.get("altura_ola", 0)
@@ -306,31 +279,31 @@ def evaluar_alertas():
         materiales = obtener_materiales(user_id, disciplina)
         peso_kg    = perfil.get("peso_kg")
 
-        if not reglas:     print(f"    ⚠️  Sin reglas para {disciplina}/{nivel}"); continue
-        if not materiales: print(f"    ⚠️  Sin materiales para {disciplina}"); continue
+        if not reglas:     print(f" Sin reglas para {disciplina}/{nivel}"); continue
+        if not materiales: print(f" Sin materiales para {disciplina}"); continue
 
         material_ok, _ = evaluar_combinacion(clima, reglas, materiales, peso_kg)
         if not material_ok:
-            print("    ℹ️  Condiciones o material no válidos"); continue
+            print(" Condiciones o material no válidos"); continue
 
         mat_nombre = material_ok.get("nombre") or material_ok.get("modelo", "tu material")
-        print(f"    ✅ Material válido: {mat_nombre}")
+        print(f" Material válido: {mat_nombre}")
 
         token = obtener_token_fcm(user_id)
-        if not token: print("    ⚠️  Sin token FCM"); continue
+        if not token: print(" Sin token FCM"); continue
 
         msg    = alerta.get("mensaje", "").strip()
         cuerpo = msg if msg else (
             f"{disciplina.capitalize()} · Nivel {nivel}\n"
             f"Viento: {viento:.0f} kn · Ola: {ola:.1f} m · {mat_nombre}")
-        titulo = "🏄 ¡Condiciones perfectas!"
+        titulo = "¡Condiciones perfectas!"
 
         if enviar_push(token, titulo, cuerpo,
                        data={"spot_id": spot_id, "disciplina": disciplina}):
             registrar_generada(user_id, spot_id, material_ok["id"], cuerpo)
             enviadas += 1
 
-    print(f"\n✅ Completado. Enviadas: {enviadas}")
+    print(f"\n Completado. Enviadas: {enviadas}")
 
 
 if __name__ == "__main__":
