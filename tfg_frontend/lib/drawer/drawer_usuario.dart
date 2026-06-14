@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
+import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/views/menu_principal_usuario/mis_favoritos_page.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'package:tfg_clima_malaga/views/menu_principal_usuario/editar_perfil_dialog.dart';
-import 'package:tfg_clima_malaga/views/principal/principal.dart';
 import 'package:tfg_clima_malaga/main.dart';
 
 import 'package:tfg_clima_malaga/views/menu_principal_usuario/alertas/mis_alertas_page.dart';
@@ -120,10 +120,9 @@ class _DrawerUsuarioState extends State<DrawerUsuario> {
                 );
 
                 if (spotSeleccionado != null) {
-                  final state = navigatorKey.currentContext
-                      ?.findAncestorStateOfType<VentanaInicioUsuarioState>();
-
-                  state?.actualizarSpot(spotSeleccionado);
+                  // SpotManager actualiza directamente — AnimatedBuilder
+                  // en principal.dart recoge el cambio automáticamente
+                  await SpotManager().cambiarSpot(spotSeleccionado);
                 }
               }),
 
