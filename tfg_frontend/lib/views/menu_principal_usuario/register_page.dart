@@ -85,8 +85,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(msg),
-      backgroundColor: EstilosWWW.colorFondoPantalla,
+      content: Text(msg, style: const TextStyle(color: EstilosWWW.colorLetra)),
+      backgroundColor: EstilosWWW.colorAzulMedio,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
   );
 

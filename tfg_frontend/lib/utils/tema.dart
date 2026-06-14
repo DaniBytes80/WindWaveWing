@@ -133,10 +133,15 @@ class EstilosWWW {
     inputDecorationTheme: InputDecorationTheme(
       labelStyle: TextStyle(color: colorLetra.withValues(alpha: 0.7)),
       enabledBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: Colors.white30),
+        borderSide: BorderSide(color: colorLetra),
       ),
       focusedBorder: UnderlineInputBorder(
         borderSide: BorderSide(color: colorAccent, width: 2),
+      ),
+      errorStyle: TextStyle(
+        color: colorLetra, // tu color de letra del tema
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
@@ -150,7 +155,7 @@ class EstilosWWW {
       trackColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected)
             ? colorAccent.withValues(alpha: 0.5)
-            : Colors.white24,
+            : colorLetra,
       ),
     ),
     dialogTheme: DialogThemeData(backgroundColor: fondoDialog),
