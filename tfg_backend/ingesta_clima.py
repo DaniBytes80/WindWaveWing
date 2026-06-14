@@ -21,11 +21,94 @@ AEMET_API_KEY             = os.getenv("AEMET_API_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-#  UTILIDADES
-def _coordenadas(spot):
+# ─────────────────────────────────────────────────────────────
+#  FCM API V1 — obtener token OAuth2 de la cuenta de servicio
+# ─────────────────────────────────────────────────────────────
+
+def _obtener_access_token():
+    """Obtiene token OAuth2 usando la cuenta de servicio de Firebase."""
     try:
-        coords = spot["pointjson"]["coordinates"]
-        return float(coords[1]), float(coords[0])  # GeoJSON: [lon, lat]
+        import google.auth.transport.requests
+        from google.oauth2 import service_account
+
+        sa_info = json.loads(FIREBASE_SA_JSON)
+        credentials = service_account.Credentials.from_service_account_info(
+            sa_info,
+            scopes=["https://www.googleapis.com/auth/firebase.messaging"],
+        )
+        credentials.refresh(google.auth.transport.requests.Request())
+        return credentials.token
+    except Exception as e:
+        print(f"    ❌ Error obteniendo token OAuth2: {e}")
+        return None
+
+
+def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
+    """Envía notificación push usando FCM API V1."""
+    if not FIREBASE_SA_JSON:
+        print("    ⚠️  FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
+        return False
+
+    access_token = _obtener_access_token()
+    if not access_token:
+        return False
+
+    # Obtener project_id del JSON de la cuenta de servicio
+    sa_info     = json.loads(FIREBASE_SA_JSON)
+    project_id  = sa_info.get("project_id")
+    url         = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+
+    payload = {
+        "message": {
+            "token": token_dispositivo,
+            "notification": {
+                "title": titulo,
+                "body":  cuerpo,
+            },
+            "android": {
+                "priority": "HIGH",
+                "notification": {"sound": "default"},
+            },
+            "data": {k: str(v) for k, v in (data or {}).items()},
+        }
+    }
+
+    try:
+        r = requests.post(
+            url,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type":  "application/json",
+            },
+            timeout=10,
+        )
+        if r.status_code == 200:
+            print(f"    ✅ Push enviado correctamente")
+            return True
+        else:
+            print(f"    ❌ Error FCM V1: {r.status_code} → {r.text}")
+            return False
+    except Exception as e:
+        print(f"    ❌ Error enviando push: {e}")
+        return False
+
+
+# ─────────────────────────────────────────────────────────────
+#  FUENTE DE DATOS METEOROLÓGICOS
+# ─────────────────────────────────────────────────────────────
+
+def obtener_clima_spot(spot_id):
+    # Prioridad 1: estación propia (futuro)
+    try:
+        hace_15min = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
+        r = supabase.table("mediciones_estacion") \
+            .select("*").eq("spot_id", spot_id) \
+            .gte("fecha_hora", hace_15min) \
+            .order("fecha_hora", desc=True).limit(1).execute()
+        if r.data:
+            print(f"    📡 Estación propia")
+            return r.data[0], "estacion"
     except Exception:
         return None, None
 
@@ -140,8 +223,8 @@ def obtener_puertos_estado(id_boya, spot_id):
                 continue
         return rows
     except Exception as e:
-        print(f" Puertos del Estado error: {e}")
-        return []
+        print(f"    Error registrando: {e}")
+
 
 #  PROCESO PRINCIPAL
 def ingestar_todos_los_spots():
