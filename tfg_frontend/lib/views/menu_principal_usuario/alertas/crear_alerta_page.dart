@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/alertas_service.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/models/spot.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class CrearAlertaPage extends StatefulWidget {
   const CrearAlertaPage({super.key});
@@ -14,18 +15,13 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
   final _alertasService = AlertasService();
   final _spotManager = SpotManager();
 
-  String? _spotId;
-  String? _disciplina;
-  String? _nivel;
-  String? _mensaje;
-  String? _nombre;
-  int _frecuenciaHoras = 4; // por defecto 4h
-  int _horaInicio = 7; // 7:00
-  int _horaFin = 22; // 22:00
+  String? _spotId, _disciplina, _nivel, _mensaje, _nombre;
+  int _frecuenciaHoras = 4;
+  int _horaInicio = 7;
+  int _horaFin = 22;
 
   final nivelesTecnicos = ["Principiante", "Ocasional", "Intensivo", "Pro"];
   final frecuencias = [1, 2, 4, 8, 12, 24];
-
   List<Spot> _spotsFavoritos = [];
 
   @override
@@ -39,7 +35,6 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
   Future<void> _crear() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
-
     final userId = _alertasService.supabase.auth.currentUser?.id;
     if (userId == null) return;
 
@@ -68,15 +63,19 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Crear Alerta")),
+      backgroundColor: EstilosWWW.colorFondoPantalla,
+      appBar: AppBar(
+        title: const Text("Crear Alerta"),
+        backgroundColor: EstilosWWW.colorFondoPantalla,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // Nombre
               TextFormField(
+                style: const TextStyle(color: EstilosWWW.colorLetra),
                 decoration: const InputDecoration(labelText: "Nombre"),
                 validator: (v) => v == null || v.trim().isEmpty
                     ? "Introduce un nombre"
@@ -85,7 +84,6 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
               ),
               const SizedBox(height: 16),
 
-              // Spot
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: "Spot"),
                 items: _spotsFavoritos
@@ -99,7 +97,6 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
               ),
               const SizedBox(height: 16),
 
-              // Disciplina
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: "Disciplina"),
                 items:
@@ -112,7 +109,6 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
               ),
               const SizedBox(height: 16),
 
-              // Nivel
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: "Nivel técnico"),
                 items: nivelesTecnicos
@@ -121,43 +117,36 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
                 validator: (v) => v == null ? "Selecciona un nivel" : null,
                 onChanged: (v) => setState(() => _nivel = v),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // ── Configuración de notificación ────────────
+              // Configuración
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.blueAccent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.blueAccent.withValues(alpha: 0.3),
-                  ),
-                ),
+                decoration: EstilosWWW.decoracionSeccion,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
+                    Row(
+                      children: const [
                         Icon(
                           Icons.notifications_active,
-                          size: 18,
-                          color: Colors.blueAccent,
+                          size: 16,
+                          color: EstilosWWW.colorCampana,
                         ),
                         SizedBox(width: 6),
                         Text(
                           "Configuración de avisos",
                           style: TextStyle(
+                            color: EstilosWWW.colorLetra,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // Frecuencia
                     DropdownButtonFormField<int>(
-                      value: _frecuenciaHoras,
+                      initialValue: _frecuenciaHoras,
                       decoration: const InputDecoration(
                         labelText: "Frecuencia máxima de avisos",
                       ),
@@ -178,19 +167,13 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
                       onChanged: (v) =>
                           setState(() => _frecuenciaHoras = v ?? 4),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // Horario
-                    const Text(
-                      "Horario de avisos",
-                      style: TextStyle(fontSize: 13, color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<int>(
-                            value: _horaInicio,
+                            initialValue: _horaInicio,
                             decoration: const InputDecoration(
                               labelText: "Desde",
                             ),
@@ -210,7 +193,7 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: DropdownButtonFormField<int>(
-                            value: _horaFin,
+                            initialValue: _horaFin,
                             decoration: const InputDecoration(
                               labelText: "Hasta",
                             ),
@@ -234,22 +217,18 @@ class _CrearAlertaPageState extends State<CrearAlertaPage> {
               ),
               const SizedBox(height: 16),
 
-              // Mensaje personalizado
               TextFormField(
+                style: const TextStyle(color: EstilosWWW.colorLetra),
                 decoration: const InputDecoration(
                   labelText: "Mensaje personalizado (opcional)",
                 ),
                 maxLines: 2,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null;
-                  if (v.length > 200) return "Máximo 200 caracteres";
-                  return null;
-                },
                 onSaved: (v) => _mensaje = v?.trim(),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               ElevatedButton(
+                style: EstilosWWW.botonOscuro,
                 onPressed: _crear,
                 child: const Text("Crear alerta"),
               ),

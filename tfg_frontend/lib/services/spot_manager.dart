@@ -23,14 +23,12 @@ class SpotManager extends ChangeNotifier {
   List<ClimaModelo> _prediccionActual = [];
   List<ClimaModelo> get prediccionActual => _prediccionActual;
 
-  // -------------------------------------------------------------
   // INICIALIZACIÓN COMPLETA (llamar SIEMPRE al entrar logueado)
-  // -------------------------------------------------------------
   Future<void> inicializar() async {
-    // 1️⃣ Cargar spots
+    // 1 Cargar spots
     _spots = await _db.getTodosLosSpots();
 
-    // 2️⃣ Seleccionar spot inicial
+    // 2 Seleccionar spot inicial
     if (_spots.isNotEmpty) {
       try {
         _spotActual = _spots.firstWhere(
@@ -43,10 +41,10 @@ class SpotManager extends ChangeNotifier {
       }
     }
 
-    // 3️⃣ Cargar favoritos
+    // 3️ Cargar favoritos
     await cargarFavoritos(silencioso: true);
 
-    // 4️⃣ Cargar predicción del spot inicial
+    // 4️ Cargar predicción del spot inicial
     if (_spotActual != null) {
       await cargarPrediccion(_spotActual!.id);
     }
@@ -54,9 +52,7 @@ class SpotManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // Cargar predicción de un spot
-  // -------------------------------------------------------------
   Future<void> cargarPrediccion(String spotId) async {
     final datos = await _db.getClimaPorSpot(spotId);
 
@@ -67,18 +63,14 @@ class SpotManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // Cambiar spot
-  // -------------------------------------------------------------
   Future<void> cambiarSpot(Spot nuevoSpot) async {
     _spotActual = nuevoSpot;
     await cargarPrediccion(nuevoSpot.id);
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // Buscar spot
-  // -------------------------------------------------------------
   Spot? buscarSpot(String nombre) {
     try {
       return _spots.firstWhere(
@@ -89,9 +81,7 @@ class SpotManager extends ChangeNotifier {
     }
   }
 
-  // -------------------------------------------------------------
   // Cargar favoritos
-  // -------------------------------------------------------------
   Future<void> cargarFavoritos({bool silencioso = false}) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
@@ -106,9 +96,7 @@ class SpotManager extends ChangeNotifier {
     if (!silencioso) notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // Añadir o quitar favorito
-  // -------------------------------------------------------------
   Future<void> toggleFavorito(String spotId) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;

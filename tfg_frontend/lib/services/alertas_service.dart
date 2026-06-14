@@ -4,9 +4,6 @@ import '../models/alerta.dart';
 class AlertasService {
   final supabase = Supabase.instance.client;
 
-  // ============================================================
-  // CREAR ALERTA
-  // ============================================================
   Future<bool> crearAlerta(Map<String, dynamic> data) async {
     try {
       print("DEBUG crearAlerta data: $data");
@@ -22,9 +19,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // INSERTAR ALERTA (usando modelo Alerta)
-  // ============================================================
   Future<bool> insertarAlerta(Alerta alerta) async {
     try {
       final res = await supabase.from('AlertasUsuario').insert(alerta.toJson());
@@ -37,9 +32,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // OBTENER ALERTAS DEL USUARIO
-  // ============================================================
   Future<List<Alerta>> obtenerAlertasUsuario(String userId) async {
     try {
       final data = await supabase
@@ -56,9 +49,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // ACTUALIZAR ALERTA
-  // ============================================================
   Future<bool> actualizarAlerta(Alerta alerta) async {
     try {
       final res = await supabase
@@ -75,9 +66,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // BORRAR ALERTA
-  // ============================================================
   Future<bool> borrarAlerta(String alertaId) async {
     try {
       final res = await supabase
@@ -94,9 +83,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // ACTIVAR / DESACTIVAR ALERTA
-  // ============================================================
   Future<bool> cambiarEstadoAlerta(String alertaId, bool activa) async {
     try {
       final res = await supabase
@@ -113,9 +100,7 @@ class AlertasService {
     }
   }
 
-  // ============================================================
   // OBTENER ALERTAS POR SPOT
-  // ============================================================
   Future<List<Alerta>> obtenerAlertasPorSpot(String spotId) async {
     try {
       final data = await supabase

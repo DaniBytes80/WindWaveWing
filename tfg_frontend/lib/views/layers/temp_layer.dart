@@ -40,8 +40,9 @@ class _TempPainter extends CustomPainter {
       if (center.dx < -radius ||
           center.dx > size.width + radius ||
           center.dy < -radius ||
-          center.dy > size.height + radius)
+          center.dy > size.height + radius) {
         continue;
+      }
 
       final color = _colorForTemp(temp);
       final opacity = _opacityForTemp(temp);

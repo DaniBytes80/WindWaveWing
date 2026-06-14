@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tfg_clima_malaga/models/spot.dart';
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 
@@ -40,7 +39,6 @@ class MisFavoritosPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título + X
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -74,7 +72,6 @@ class MisFavoritosPage extends StatelessWidget {
                       ),
                     ),
 
-                  // ✅ FIX: al pulsar un favorito navega correctamente
                   // Devuelve el Spot seleccionado al caller (principal.dart)
                   ...spotsFavoritos.map(
                     (spot) => ListTile(
@@ -93,7 +90,7 @@ class MisFavoritosPage extends StatelessWidget {
                         ),
                       ),
                       onTap: () {
-                        // ✅ Devuelve el Spot — principal.dart lo recibe
+                        // Devuelve el Spot a principal.dart lo recibe
                         // y llama a actualizarSpot(spot)
                         Navigator.pop(context, spot);
                       },
@@ -108,16 +105,3 @@ class MisFavoritosPage extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-//  CÓMO ABRIR MisFavoritosPage desde el drawer o donde sea:
-//
-//  final spot = await Navigator.push<Spot>(
-//    context,
-//    MaterialPageRoute(builder: (_) => const MisFavoritosPage()),
-//  );
-//  if (spot != null && context.mounted) {
-//    // Obtener VentanaInicioUsuarioState y llamar actualizarSpot
-//    // O usar un callback/provider según tu arquitectura
-//  }
-// ============================================================

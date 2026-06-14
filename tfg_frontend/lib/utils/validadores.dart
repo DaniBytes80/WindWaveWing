@@ -5,7 +5,7 @@ class Validadores {
   static bool tieneContactoMinimo(String email, String tlf) =>
       email.trim().isNotEmpty || tlf.trim().isNotEmpty;
 
-  // NUEVA: Validación de contraseña compleja
+  // Validación de contraseña compleja
   static bool esContrasenaSegura(String pass) {
     // Explicación de la RegExp para tu memoria del TFG:
     // (?=.*[A-Z]) -> Al menos una mayúscula

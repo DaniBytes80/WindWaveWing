@@ -8,10 +8,10 @@ class WWWDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userManager = UserManager(); // ⭐ referencia única
+    final userManager = UserManager(); // referencia única
 
     return AnimatedBuilder(
-      animation: userManager, // ⭐ escucha cambios del perfil
+      animation: userManager, // escucha cambios del perfil
       builder: (context, _) {
         final user = userManager.usuario;
 

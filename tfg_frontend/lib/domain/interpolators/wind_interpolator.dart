@@ -2,15 +2,11 @@ import 'dart:math' as math;
 import 'package:tfg_clima_malaga/domain/interpolators/weather_point.dart';
 import 'package:tfg_clima_malaga/models/spot.dart';
 
-
-
-// ============================================================
 //  WindInterpolator
 //  Convierte una lista de Spots con valores meteorológicos
 //  en un grid regular interpolado con IDW
-//  (Inverse Distance Weighting — el mismo algoritmo que
-//  usan Windy y Meteoblue para rellenar entre estaciones).
-// ============================================================
+//  (Inverse Distance Weighting rellena entre estaciones.
+
 class WindInterpolator {
   /// Genera una lista de WeatherPoints a partir de los Spots.
   /// [getSpeed] extrae el valor principal (velocidad, lluvia, temp)
@@ -83,7 +79,7 @@ class WindInterpolator {
     return result;
   }
 
-  // ── Distancia Haversine en grados (aproximada, suficiente para IDW) ──
+  // Distancia Haversine en grados (aproximada, suficiente para IDW)
   static double _haversine(double lat1, double lng1, double lat2, double lng2) {
     const r = 6371.0; // km
     final dLat = _toRad(lat2 - lat1);

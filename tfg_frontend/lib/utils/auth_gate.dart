@@ -64,7 +64,7 @@ class _AuthGateState extends State<AuthGate> {
           return const LoginPage();
         }
 
-        // ⭐ Cargar datos cuando se detecta sesión nueva
+        // Cargar datos cuando se detecta sesión nueva
         return FutureBuilder(
           future: _cargarTodo(),
           builder: (context, snap) {

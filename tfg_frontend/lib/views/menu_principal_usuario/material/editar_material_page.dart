@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tfg_clima_malaga/models/material_usuario.dart';
 import 'package:tfg_clima_malaga/services/material_service.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class EditarMaterialPage extends StatefulWidget {
   final MaterialUsuario material;
   const EditarMaterialPage({super.key, required this.material});
-
   @override
   State<EditarMaterialPage> createState() => _EditarMaterialPageState();
 }
@@ -90,10 +90,22 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
     return _getMedidaConfig(_disciplina!, _tipo!);
   }
 
+  // Hint contextual para descripción
+  String? get _descripcionHint {
+    if (_tipo == 'foil') {
+      return 'Ej: Mástil 75cm · Stab 280cm² · Fuselaje 60cm\n'
+          'Recuerda añadir el mástil y el stabilizer como materiales separados';
+    }
+    if (_tipo == 'vela') return 'Ej: Compatible con mástil RDM 460cm';
+    if (_tipo == 'botavara') return 'Ej: Regulable 160-220cm';
+    if (_tipo == 'mástil') return 'Ej: RDM, IMCS 25, compatible con vela 7.5m²';
+    return null;
+  }
+
   static _MedidaConfig? _getMedidaConfig(String disciplina, String tipo) {
     switch (disciplina) {
       case 'surf':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 35 · Para 90kg nivel Pro: 30-45L, Principiante: 60-130L',
@@ -101,7 +113,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 15,
             max: 200,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -109,9 +122,10 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 400,
             max: 3000,
           );
+        }
 
       case 'wingfoil':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 105 · Rango habitual: 60-150L',
@@ -119,7 +133,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 40,
             max: 200,
           );
-        if (tipo == 'ala')
+        }
+        if (tipo == 'ala') {
           return _MedidaConfig(
             label: 'Superficie del ala (m²)',
             hint: 'Ej: 5.5 · Rango habitual: 2.5-9 m²',
@@ -129,7 +144,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -137,9 +153,10 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 400,
             max: 3000,
           );
+        }
 
       case 'kitesurf':
-        if (tipo == 'cometa')
+        if (tipo == 'cometa') {
           return _MedidaConfig(
             label: 'Superficie de la cometa (m²)',
             hint: 'Ej: 12 · Rango habitual: 5-21 m²',
@@ -149,7 +166,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'tabla')
+        }
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Longitud de la tabla (cm)',
             hint: 'Ej: 138 · Rango habitual: 120-165 cm',
@@ -157,7 +175,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 100,
             max: 180,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -165,9 +184,10 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 400,
             max: 3000,
           );
+        }
 
       case 'windsurf':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 130 · Rango habitual: 65-250L',
@@ -175,7 +195,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 50,
             max: 280,
           );
-        if (tipo == 'vela')
+        }
+        if (tipo == 'vela') {
           return _MedidaConfig(
             label: 'Superficie de la vela (m²)',
             hint: 'Ej: 7.5 · Rango habitual: 3-13 m²',
@@ -185,7 +206,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'botavara')
+        }
+        if (tipo == 'botavara') {
           return _MedidaConfig(
             label: 'Longitud de botavara (cm)',
             hint: 'Ej: 185 · Rango habitual: 140-230 cm',
@@ -193,7 +215,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 130,
             max: 250,
           );
-        if (tipo == 'mástil')
+        }
+        if (tipo == 'mástil') {
           return _MedidaConfig(
             label: 'Altura del mástil (cm)',
             hint: 'Ej: 460 · Rango habitual: 340-550 cm',
@@ -201,7 +224,8 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 300,
             max: 600,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -209,6 +233,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
             min: 400,
             max: 3000,
           );
+        }
     }
     return null;
   }
@@ -249,16 +274,21 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
     final config = _medidaConfig;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Editar Material")),
+      backgroundColor: EstilosWWW.colorFondoPantalla,
+      appBar: AppBar(
+        title: const Text("Editar Material"),
+        backgroundColor: EstilosWWW.colorFondoPantalla,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
+              // Disciplina
               DropdownButtonFormField<String>(
+                initialValue: _disciplina,
                 decoration: const InputDecoration(labelText: "Disciplina"),
-                value: _disciplina,
                 items: disciplinas
                     .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                     .toList(),
@@ -272,12 +302,13 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
               ),
               const SizedBox(height: 16),
 
+              // Tipo
               if (_disciplina != null) ...[
                 DropdownButtonFormField<String>(
+                  initialValue: _tipo,
                   decoration: const InputDecoration(
                     labelText: "Tipo de material",
                   ),
-                  value: _tipo,
                   items: tiposPorDisciplina[_disciplina]!
                       .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                       .toList(),
@@ -290,14 +321,15 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                 const SizedBox(height: 16),
               ],
 
+              // Clase barco
               if (_disciplina == 'vela ligera' && _tipo == 'tipo de barco') ...[
                 DropdownButtonFormField<String>(
+                  initialValue: clasesBarco.contains(_medidaCtrl.text)
+                      ? _medidaCtrl.text
+                      : null,
                   decoration: const InputDecoration(
                     labelText: "Clase de barco",
                   ),
-                  value: clasesBarco.contains(_medidaCtrl.text)
-                      ? _medidaCtrl.text
-                      : null,
                   items: clasesBarco
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
@@ -310,6 +342,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
               if (_tipo != null) ...[
                 TextFormField(
                   initialValue: _nombre,
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(
                     labelText: "Nombre (opcional)",
                   ),
@@ -318,51 +351,53 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                     if (v == null || v.trim().isEmpty) return null;
                     if (!RegExp(
                       r"^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,_-]{2,}$",
-                    ).hasMatch(v.trim()))
+                    ).hasMatch(v.trim())) {
                       return "Nombre no válido";
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
+
                 TextFormField(
                   initialValue: _marca,
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Marca"),
                   onSaved: (v) => _marca = v?.trim(),
                 ),
                 const SizedBox(height: 8),
+
                 TextFormField(
                   initialValue: _modelo,
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Modelo"),
                   onSaved: (v) => _modelo = v?.trim(),
                 ),
                 const SizedBox(height: 8),
+
                 TextFormField(
                   initialValue: _ano?.toString() ?? '',
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) {
                     if (v == null || v.isEmpty) return null;
                     final y = int.tryParse(v);
-                    if (y == null || y < 1980 || y > 2030)
+                    if (y == null || y < 1980 || y > 2030) {
                       return "Año no válido";
+                    }
                     return null;
                   },
                   onSaved: (v) => _ano = int.tryParse(v ?? ''),
                 ),
                 const SizedBox(height: 16),
 
-                // ── CAMPO MEDIDA INTELIGENTE ──────────────
+                // Campo medida inteligente
                 if (config != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.blue.withValues(alpha: 0.3),
-                      ),
-                    ),
+                    decoration: EstilosWWW.decoracionSeccion,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -371,14 +406,17 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                             const Icon(
                               Icons.straighten,
                               size: 18,
-                              color: Colors.blue,
+                              color: EstilosWWW.colorAccent,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              config.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                            Expanded(
+                              child: Text(
+                                config.label,
+                                style: const TextStyle(
+                                  color: EstilosWWW.colorLetra,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -386,14 +424,14 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                         const SizedBox(height: 4),
                         Text(
                           config.hint,
-                          style: TextStyle(
+                          style: EstilosWWW.textoSecundario.copyWith(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _medidaCtrl,
+                          style: const TextStyle(color: EstilosWWW.colorLetra),
                           keyboardType: config.teclado,
                           inputFormatters: config.decimal
                               ? [
@@ -413,9 +451,9 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                             if (v == null || v.trim().isEmpty) {
                               return 'Introduce la medida en ${config.unidad}';
                             }
-                            final num = double.tryParse(v.trim());
-                            if (num == null) return 'Valor numérico inválido';
-                            if (num < config.min || num > config.max) {
+                            final n = double.tryParse(v.trim());
+                            if (n == null) return 'Valor numérico inválido';
+                            if (n < config.min || n > config.max) {
                               return 'Rango válido: '
                                   '${config.min.toStringAsFixed(0)} - '
                                   '${config.max.toStringAsFixed(0)} ${config.unidad}';
@@ -429,10 +467,17 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                   const SizedBox(height: 16),
                 ],
 
+                // Descripción con hint contextual
                 TextFormField(
                   initialValue: _descripcion,
-                  decoration: const InputDecoration(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
+                  decoration: InputDecoration(
                     labelText: "Descripción (opcional)",
+                    hintText: _descripcionHint,
+                    hintStyle: EstilosWWW.textoSecundario.copyWith(
+                      fontSize: 12,
+                    ),
+                    hintMaxLines: 3,
                   ),
                   maxLines: 3,
                   onSaved: (v) => _descripcion = v?.trim(),
@@ -440,6 +485,7 @@ class _EditarMaterialPageState extends State<EditarMaterialPage> {
                 const SizedBox(height: 24),
 
                 ElevatedButton(
+                  style: EstilosWWW.botonOscuro,
                   onPressed: _guardarCambios,
                   child: const Text("Guardar cambios"),
                 ),

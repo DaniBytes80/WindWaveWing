@@ -15,6 +15,7 @@ class WWWBuscador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Autocompletado con sugerencias basadas en las opciones proporcionadas
     return Autocomplete<String>(
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (textEditingValue.text.isEmpty) {
@@ -34,13 +35,14 @@ class WWWBuscador extends StatelessWidget {
 
       fieldViewBuilder:
           (context, fieldController, focusNode, onFieldSubmitted) {
-            // ⭐ Sincronización perfecta del texto y cursor
+            // Sincronización perfecta del texto y cursor
             if (fieldController.text != controller.text) {
               fieldController.value = controller.value;
             }
 
             return Container(
               decoration: BoxDecoration(
+                // Personalización del campo de búsqueda
                 color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
@@ -49,6 +51,7 @@ class WWWBuscador extends StatelessWidget {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: TextField(
+                // Controlador y nodo de enfoque
                 controller: fieldController,
                 focusNode: focusNode,
                 onSubmitted: (valor) => onSearch(valor),
@@ -64,6 +67,7 @@ class WWWBuscador extends StatelessWidget {
           },
 
       optionsViewBuilder: (context, onSelected, opcionesFiltradas) {
+        // Personalización de la lista de sugerencias
         return Align(
           alignment: Alignment.topCenter,
           child: Material(
@@ -71,12 +75,12 @@ class WWWBuscador extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.only(top: 5),
               decoration: BoxDecoration(
-                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.85),
+                color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(15), // ⭐ encaja visualmente
                 ),
                 border: Border.all(
-                  color: EstilosWWW.colorBordeTabla.withValues(alpha: 0.7),
+                  color: EstilosWWW.colorBordeTabla.withValues(alpha: 0.85),
                 ),
               ),
               child: ListView.builder(

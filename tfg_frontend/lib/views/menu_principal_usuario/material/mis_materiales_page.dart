@@ -4,6 +4,7 @@ import 'package:tfg_clima_malaga/models/material_usuario.dart';
 import 'package:tfg_clima_malaga/services/material_service.dart';
 import 'package:tfg_clima_malaga/views/menu_principal_usuario/material/crear_material_page.dart';
 import 'package:tfg_clima_malaga/views/menu_principal_usuario/material/editar_material_page.dart';
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class MisMaterialesPage extends StatefulWidget {
   const MisMaterialesPage({super.key});
@@ -12,7 +13,7 @@ class MisMaterialesPage extends StatefulWidget {
 }
 
 class _MisMaterialesPageState extends State<MisMaterialesPage> {
-  final MaterialService _service = MaterialService();
+  final _service = MaterialService();
   List<MaterialUsuario> _materiales = [];
   bool _cargando = true;
 
@@ -35,10 +36,8 @@ class _MisMaterialesPageState extends State<MisMaterialesPage> {
     });
   }
 
-  // ── Icono del material ────────────────────────────────────
   Widget _icono(MaterialUsuario m) {
     final tipo = m.tipo.toLowerCase();
-
     switch (tipo) {
       case 'foil':
         return _svg('assets/icons/ico_foil.svg');
@@ -51,30 +50,33 @@ class _MisMaterialesPageState extends State<MisMaterialesPage> {
       case 'mástil':
         return _svg('assets/icons/ico_windsurf_vela.svg');
       case 'tabla':
-        return const Icon(Icons.surfing, size: 32, color: Colors.blueAccent);
+        return const Icon(
+          Icons.surfing,
+          size: 32,
+          color: EstilosWWW.colorAccent,
+        );
       case 'tipo de barco':
-        return const Icon(Icons.sailing, size: 32, color: Colors.blueAccent);
+        return const Icon(
+          Icons.sailing,
+          size: 32,
+          color: EstilosWWW.colorAccent,
+        );
       default:
         return const Icon(
           Icons.inventory_2,
           size: 32,
-          color: Colors.blueAccent,
+          color: EstilosWWW.colorAccent,
         );
     }
   }
 
-  // ✅ Sin colorFilter — respeta los colores originales del SVG
-  Widget _svg(String path) {
-    return SvgPicture.asset(path, width: 34, height: 34);
-  }
+  Widget _svg(String path) => SvgPicture.asset(path, width: 34, height: 34);
 
-  // ── Badge medida con unidad ───────────────────────────────
   String _medidaConUnidad(MaterialUsuario m) {
     final v = m.medida;
     if (v == null || v.isEmpty) return '';
     final tipo = m.tipo.toLowerCase();
     final disc = m.disciplina.toLowerCase();
-
     switch (tipo) {
       case 'foil':
         return '$v cm²';
@@ -104,17 +106,22 @@ class _MisMaterialesPageState extends State<MisMaterialesPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Mi Material Deportivo")),
+      backgroundColor: EstilosWWW.colorFondoPantalla,
+      appBar: AppBar(
+        title: const Text("Mi Material Deportivo"),
+        backgroundColor: EstilosWWW.colorFondoPantalla,
+      ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _materiales.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 "No tienes material registrado",
-                style: TextStyle(fontSize: 18),
+                style: EstilosWWW.textoSecundario,
               ),
             )
           : ListView(
+              padding: const EdgeInsets.only(bottom: 80),
               children: agrupado.entries
                   .map(
                     (entry) => Column(
@@ -124,151 +131,169 @@ class _MisMaterialesPageState extends State<MisMaterialesPage> {
                           padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
                           child: Text(
                             entry.key.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueAccent,
+                            style: EstilosWWW.tituloSeccion.copyWith(
+                              color: EstilosWWW.colorAccent,
                             ),
                           ),
                         ),
-
                         ...entry.value.map((m) {
                           final medida = _medidaConUnidad(m);
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            child: ListTile(
-                              dense: true,
-                              minLeadingWidth: 40,
-                              leading: _icono(m),
-
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      m.nombre ?? m.tipo,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  if (medida.isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blueAccent.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.blueAccent.withValues(
-                                            alpha: 0.35,
-                                          ),
-                                        ),
-                                      ),
+                          return Material(
+                            color: Colors.transparent,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: EstilosWWW.decoracionCard,
+                              child: ListTile(
+                                dense: true,
+                                minLeadingWidth: 40,
+                                leading: _icono(m),
+                                title: Row(
+                                  children: [
+                                    Expanded(
                                       child: Text(
-                                        medida,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color.from(alpha: 1, red: 0.267, green: 0.541, blue: 1),
-                                        ),
+                                        m.nombre ?? m.tipo,
+                                        style: EstilosWWW.textoNegritaTabla,
                                       ),
                                     ),
-                                ],
-                              ),
-
-                              subtitle: Text(
-                                [
-                                  if (m.marca != null && m.marca!.isNotEmpty)
-                                    m.marca!,
-                                  if (m.modelo != null && m.modelo!.isNotEmpty)
-                                    m.modelo!,
-                                  if (m.ano != null) m.ano.toString(),
-                                ].join(' · '),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-
-                              trailing: PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert),
-                                onSelected: (value) async {
-                                  if (value == 'editar') {
-                                    final ok = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            EditarMaterialPage(material: m),
-                                      ),
-                                    );
-                                    if (ok == true) _cargarMaterial();
-                                  }
-                                  if (value == 'eliminar') {
-                                    final confirmar = await showDialog<bool>(
-                                      context: context,
-                                      builder: (_) => AlertDialog(
-                                        title: const Text("Eliminar material"),
-                                        content: Text(
-                                          "¿Seguro que quieres eliminar "
-                                          "'${m.nombre ?? m.tipo}'?",
+                                    if (medida.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: const Text("Cancelar"),
+                                        decoration: BoxDecoration(
+                                          color: EstilosWWW.colorAccent
+                                              .withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: const Text(
-                                              "Eliminar",
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
+                                          border: Border.all(
+                                            color: EstilosWWW.colorAccent
+                                                .withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          medida,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: EstilosWWW.colorAccent,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  [
+                                    if (m.marca != null && m.marca!.isNotEmpty)
+                                      m.marca!,
+                                    if (m.modelo != null &&
+                                        m.modelo!.isNotEmpty)
+                                      m.modelo!,
+                                    if (m.ano != null) m.ano.toString(),
+                                  ].join(' · '),
+                                  style: EstilosWWW.textoSecundario,
+                                ),
+                                trailing: PopupMenuButton<String>(
+                                  icon: const Icon(
+                                    Icons.more_vert,
+                                    size: 20,
+                                    color: Colors.white54,
+                                  ),
+                                  color: EstilosWWW.colorAzulMedio,
+                                  onSelected: (value) async {
+                                    if (value == 'editar') {
+                                      final ok = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              EditarMaterialPage(material: m),
+                                        ),
+                                      );
+                                      if (ok == true) _cargarMaterial();
+                                    }
+                                    if (value == 'eliminar') {
+                                      final confirmar = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          backgroundColor:
+                                              EstilosWWW.fondoDialog,
+                                          title: const Text(
+                                            "Eliminar material",
+                                            style: TextStyle(
+                                              color: EstilosWWW.colorLetra,
                                             ),
                                           ),
+                                          content: Text(
+                                            "¿Seguro que quieres eliminar "
+                                            "'${m.nombre ?? m.tipo}'?",
+                                            style: EstilosWWW.textoSecundario,
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text(
+                                                "Cancelar",
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text(
+                                                "Eliminar",
+                                                style: TextStyle(
+                                                  color: Colors.redAccent,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirmar == true) {
+                                        final ok = await _service
+                                            .eliminarMaterial(m.id);
+                                        if (ok) _cargarMaterial();
+                                      }
+                                    }
+                                  },
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem(
+                                      value: 'editar',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.edit,
+                                            size: 20,
+                                            color: Colors.blueAccent,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text("Modificar"),
                                         ],
                                       ),
-                                    );
-                                    if (confirmar == true) {
-                                      final ok = await _service
-                                          .eliminarMaterial(m.id);
-                                      if (ok) _cargarMaterial();
-                                    }
-                                  }
-                                },
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: 'editar',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 20),
-                                        SizedBox(width: 10),
-                                        Text("Modificar"),
-                                      ],
                                     ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'eliminar',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete,
-                                          size: 20,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text("Eliminar"),
-                                      ],
+                                    PopupMenuItem(
+                                      value: 'eliminar',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete,
+                                            size: 20,
+                                            color: Colors.redAccent,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text("Eliminar"),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -278,8 +303,9 @@ class _MisMaterialesPageState extends State<MisMaterialesPage> {
                   )
                   .toList(),
             ),
-
       floatingActionButton: FloatingActionButton(
+        backgroundColor: EstilosWWW.colorBordeTabla,
+        foregroundColor: EstilosWWW.colorLetra,
         onPressed: () async {
           final ok = await Navigator.push(
             context,

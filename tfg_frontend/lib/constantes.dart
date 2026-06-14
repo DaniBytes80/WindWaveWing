@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart' show Icons, IconData;
-
+// Clase que contiene constantes utilizadas en la aplicación
 class Constantes {
   static const String urlBase = 'https://api.themoviedb.org/3';
   static const String apiKey =

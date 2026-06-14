@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('📩 Push en background: ${message.notification?.title}');
+  debugPrint(' Push en background: ${message.notification?.title}');
 }
 
 class NotificationsService {
@@ -72,7 +72,7 @@ class NotificationsService {
     debugPrint('FCM TOKEN: $token');
 
     try {
-      // ✅ FIX: borrar token antiguo del usuario y guardar el nuevo
+      // borrar token antiguo del usuario y guardar el nuevo
       await _supabase.from('Dispositivos').delete().eq('user_id', userId);
 
       await _supabase.from('Dispositivos').upsert({
@@ -80,13 +80,13 @@ class NotificationsService {
         'token': token,
         'fecha_registro': DateTime.now().toIso8601String(),
       });
-      debugPrint('✅ Token FCM guardado en Supabase');
+      debugPrint(' Token FCM guardado en Supabase');
     } catch (e) {
-      debugPrint('❌ Error guardando token FCM: $e');
+      debugPrint(' Error guardando token FCM: $e');
     }
 
     _messaging.onTokenRefresh.listen((newToken) async {
-      debugPrint('🔄 Token FCM actualizado: $newToken');
+      debugPrint('Token FCM actualizado: $newToken');
       try {
         await _supabase.from('Dispositivos').delete().eq('user_id', userId);
 
@@ -96,7 +96,7 @@ class NotificationsService {
           'fecha_registro': DateTime.now().toIso8601String(),
         });
       } catch (e) {
-        debugPrint('❌ Error actualizando token: $e');
+        debugPrint(' Error actualizando token: $e');
       }
     });
   }

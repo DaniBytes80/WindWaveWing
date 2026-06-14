@@ -24,9 +24,7 @@ class UserManager extends ChangeNotifier {
 
   Timer? _timerInactividad;
 
-  // -------------------------------------------------------------
   // Cargar perfil si existe (arranque silencioso)
-  // -------------------------------------------------------------
   Future<void> cargarPerfilSiExiste() async {
     final user = _supabase.auth.currentUser;
 
@@ -56,7 +54,7 @@ class UserManager extends ChangeNotifier {
       _perfil = Perfil.fromJson(data);
       _isLogueado = true;
 
-      // ⭐ CARGAR SPOTS + FAVORITOS + SPOT ACTUAL + PREDICCIÓN
+      // CARGAR SPOTS + FAVORITOS + SPOT ACTUAL + PREDICCIÓN
       await SpotManager().inicializar();
 
       estaInicializado = true;
@@ -70,9 +68,7 @@ class UserManager extends ChangeNotifier {
     }
   }
 
-  // -------------------------------------------------------------
   // Cargar perfil (usado en login)
-  // -------------------------------------------------------------
   Future<void> cargarPerfil() async {
     final user = _supabase.auth.currentUser;
 
@@ -93,7 +89,7 @@ class UserManager extends ChangeNotifier {
       _perfil = Perfil.fromJson(data);
       _isLogueado = true;
 
-      // ⭐ CARGAR SPOTS + FAVORITOS + SPOT ACTUAL + PREDICCIÓN
+      // CARGAR SPOTS + FAVORITOS + SPOT ACTUAL + PREDICCIÓN
       await SpotManager().inicializar();
 
       iniciarContadorInactividad();
@@ -105,31 +101,25 @@ class UserManager extends ChangeNotifier {
     }
   }
 
-  // -------------------------------------------------------------
   // Establecer perfil manualmente
-  // -------------------------------------------------------------
   void setPerfil(Perfil perfil) {
     _perfil = perfil;
     _isLogueado = true;
 
-    // ⭐ Cargar spots y favoritos al establecer perfil
+    // Cargar spots y favoritos al establecer perfil
     SpotManager().inicializar();
 
     iniciarContadorInactividad();
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // Actualizar perfil localmente
-  // -------------------------------------------------------------
   void actualizarPerfilLocal(Perfil nuevoPerfil) {
     _perfil = nuevoPerfil;
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // LOGOUT manual o automático
-  // -------------------------------------------------------------
   Future<void> logout() async {
     await _supabase.auth.signOut();
     _perfil = null;
@@ -143,9 +133,7 @@ class UserManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // -------------------------------------------------------------
   // INACTIVIDAD: iniciar temporizador de 10 minutos
-  // -------------------------------------------------------------
   void iniciarContadorInactividad() {
     _timerInactividad?.cancel();
 
@@ -158,9 +146,7 @@ class UserManager extends ChangeNotifier {
     });
   }
 
-  // -------------------------------------------------------------
   // LLAMAR ESTO EN CUALQUIER INTERACCIÓN DEL USUARIO
-  // -------------------------------------------------------------
   void actividadDetectada() {
     if (_isLogueado) {
       iniciarContadorInactividad();

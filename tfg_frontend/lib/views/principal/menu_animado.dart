@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 
-class MenuAnimado extends StatelessWidget {
-  final bool abierto;
-  final Function() onClose;
+class MenuAnimado extends StatelessWidget {  
+  final bool abierto;// Indica si el menu está abierto o cerrado
+  final Function() onClose; // Callback para cerrar el menu
 
-  // ⭐ Callbacks reales para activar capas (los pasa principal.dart)
+// Callbacks para cada opción del menú
   final VoidCallback onViento;
   final VoidCallback onOlas;
   final VoidCallback onLluvia;
   final VoidCallback onTemp;
 
   const MenuAnimado({
+    // Constructor del widget MenuAnimado
     super.key,
     required this.abierto,
     required this.onClose,
@@ -23,6 +24,7 @@ class MenuAnimado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Devuelve un widget que representa el menu animado con las opciones de capas (viento, olas, lluvia, temperatura)
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
@@ -63,6 +65,7 @@ class MenuAnimado extends StatelessWidget {
   }
 
   Widget _item(String texto, String icono, Function() accion) {
+    // Devuelve un widget que representa un item del menu animado, con texto y icono, y que ejecuta la accion al pulsarlo
     return GestureDetector(
       onTap: accion,
       child: Row(

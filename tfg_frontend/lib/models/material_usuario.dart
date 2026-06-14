@@ -4,13 +4,13 @@ class MaterialUsuario {
   final String id;
   final String userId;
 
-  /// Disciplina: kitesurf, wingfoil, windsurf, surf, paddle, vela ligera, foil…
+  // Disciplina: kitesurf, wingfoil, windsurf, surf, paddle, vela ligera, foil…
   final String disciplina;
 
-  /// Tipo: tabla, cometa, wing, foil, mástil, fuselaje, arnés, etc.
+  // Tipo: tabla, cometa, wing, foil, mástil, fuselaje, arnés, etc.
   final String tipo;
 
-  /// Nombre descriptivo del material (opcional)
+  // Nombre descriptivo del material (opcional)
   final String? nombre;
 
   final DateTime fechaCreacion;
@@ -19,7 +19,7 @@ class MaterialUsuario {
   final String? modelo;
   final int? ano;
 
-  /// Medida genérica (ej: “5m”, “85L”, “210cm”, “800cm2”)
+  // Medida genérica (ej: “5m”, “85L”, “210cm”, “800cm2”)
   final String? medida;
 
   final String? descripcion;

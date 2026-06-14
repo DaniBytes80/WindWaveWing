@@ -7,7 +7,7 @@ void mostrarVentanaInactividad(BuildContext context) {
   final overlay = Overlay.maybeOf(context);
 
   if (overlay == null) {
-    debugPrint("⚠ No se pudo mostrar la ventana: Overlay no disponible");
+    debugPrint(" No se pudo mostrar la ventana: Overlay no disponible");
     return;
   }
 
@@ -30,7 +30,7 @@ void mostrarVentanaInactividad(BuildContext context) {
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Text(
-              "⏳ Sesión cerrada por inactividad",
+              " Sesión cerrada por inactividad",
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,

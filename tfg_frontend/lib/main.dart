@@ -15,16 +15,27 @@ import 'package:tfg_clima_malaga/views/principal/principal.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'configuration.dart';
 
+// Clase que contiene la configuración de la aplicación
+// Versión de la aplicación
+// Muestra una pantalla de carga mientras se inicializan los servicios
+// Maneja la navegación a la pantalla principal del usuario una vez que se completa la inicialización
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await initializeDateFormatting('es_ES', null);
+  // Inicialización de Flutter y Firebase
+  WidgetsFlutterBinding.ensureInitialized(); // Necesario para inicializar Firebase antes de runApp
+  await initializeDateFormatting(
+    'es_ES',
+    null,
+  ); // Inicializa la localización para fechas en español
+  // Inicializa Firebase con la configuración específica de la plataforma
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Supabase.initialize(
-    url: Configuration.supabaseUrl,
-    publishableKey: Configuration.supabaseAnonKey,
+    // Inicializa Supabase con la URL y la clave pública
+    url: Configuration.supabaseUrl, // URL del proyecto Supabase
+    publishableKey:
+        Configuration.supabaseAnonKey, // Clave pública para autenticación
   );
 
   runApp(const WindWaveWingApp());
@@ -38,26 +49,25 @@ class WindWaveWingApp extends StatefulWidget {
 }
 
 class _WindWaveWingAppState extends State<WindWaveWingApp> {
+  // Suscripción para escuchar cambios de estado de autenticación
   late final StreamSubscription<AuthState> _authSub;
-  late final AppLinks _appLinks;
-  StreamSubscription<Uri>? _linkSub;
+  late final AppLinks _appLinks; // Instancia para manejar deep links
+  StreamSubscription<Uri>?
+  _linkSub; // Suscripción para escuchar deep links entrantes
 
   @override
   void initState() {
     super.initState();
-    _escucharAuth();
-    _escucharDeepLinks();
+    _escucharAuth(); // Configura la escucha de cambios de autenticación
+    _escucharDeepLinks(); // Configura la escucha de deep links
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  Escucha cambios de sesión de Supabase
-  //  Cuando Google (o cualquier OAuth) completa el login,
-  //  Supabase emite AuthChangeEvent.signedIn → navegamos
-  // ─────────────────────────────────────────────────────────
   void _escucharAuth() {
+    // Escucha cambios de estado de autenticación en Supabase
     _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
       data,
     ) async {
+      // Callback que se ejecuta cuando cambia el estado de autenticación
       final event = data.event;
       final session = data.session;
 
@@ -94,12 +104,8 @@ class _WindWaveWingAppState extends State<WindWaveWingApp> {
     });
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  Escucha deep links (windwavewing://auth/callback)
-  //  Necesario para que el callback de Google OAuth
-  //  llegue a la app desde el navegador externo
-  // ─────────────────────────────────────────────────────────
   void _escucharDeepLinks() {
+    // Configura la escucha de deep links entrantes
     _appLinks = AppLinks();
 
     // Deep link que abrió la app (si estaba cerrada)
@@ -122,6 +128,7 @@ class _WindWaveWingAppState extends State<WindWaveWingApp> {
 
   @override
   void dispose() {
+    // Cancela las suscripciones al cerrar la app
     _authSub.cancel();
     _linkSub?.cancel();
     super.dispose();
@@ -129,7 +136,9 @@ class _WindWaveWingAppState extends State<WindWaveWingApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Construye la app principal con tema oscuro y pantalla de splash
     return MaterialApp(
+      // MaterialApp es el widget raíz de la app
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
@@ -140,10 +149,8 @@ class _WindWaveWingAppState extends State<WindWaveWingApp> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  SplashPage — sin cambios
-// ─────────────────────────────────────────────────────────────
 class SplashPage extends StatefulWidget {
+  // Pantalla de carga inicial mientras se inicializa la app
   const SplashPage({super.key});
 
   @override
@@ -151,6 +158,7 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  // Estado de la pantalla de carga
   @override
   void initState() {
     super.initState();
@@ -158,12 +166,16 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _inicializarApp() async {
+    // Inicializa los managers y carga datos necesarios antes de mostrar la pantalla principal
     final spotManager = SpotManager();
     final userManager = UserManager();
     await spotManager.inicializar();
     await spotManager.cargarFavoritos();
     await userManager.cargarPerfilSiExiste();
-    if (!mounted) return;
+    if (!mounted) {
+      return; // Verifica que el widget sigue montado antes de navegar
+    }
+    // Navega a la pantalla principal del usuario
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const VentanaInicioUsuario()),
     );

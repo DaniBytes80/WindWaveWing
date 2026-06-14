@@ -43,57 +43,32 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       await authService.signUpWithEmailPassword(email, pass);
       if (mounted) {
-        // ✅ FIX: cerrar el diálogo de registro primero
         Navigator.pop(context);
-        // ✅ FIX: usar showDialog con barrierDismissible: true
-        //         y X para cerrar en vez de botón "Entendido"
         showDialog(
           context: context,
-          barrierDismissible: true, // pulsar fuera cierra
+          barrierDismissible: true,
           builder: (_) => Dialog(
-            backgroundColor: EstilosWWW.colorFondoPantalla,
+            backgroundColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
             ),
-            child: Padding(
+            child: Container(
+              decoration: EstilosWWW.decoracionDialog,
               padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ Fila título + X
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.mark_email_unread, color: Colors.amber),
-                          SizedBox(width: 8),
-                          Text(
-                            "Confirma tu email",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white54,
-                          size: 22,
-                        ),
-                      ),
-                    ],
+                  EstilosWWW.cabeceraDialog(
+                    context,
+                    "Confirma tu email",
+                    icono: Icons.mark_email_unread,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     "Hemos enviado un enlace de confirmación a:\n\n$email\n\n"
                     "Revisa tu bandeja de entrada (y spam).\n"
                     "Una vez confirmado ya puedes iniciar sesión.",
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: EstilosWWW.textoSecundario,
                   ),
                 ],
               ),
@@ -126,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextField(
         controller: controller,
         obscureText: !verTexto,
-        style: TextStyle(color: EstilosWWW.colorLetra),
+        style: const TextStyle(color: EstilosWWW.colorLetra),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
@@ -159,15 +134,15 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              "Crear cuenta",
-              style: TextStyle(
-                color: EstilosWWW.colorLetra,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Crear cuenta", style: EstilosWWW.tituloDialog),
+                EstilosWWW.botonCerrar(context),
+              ],
             ),
             const SizedBox(height: 20),
+
             WWWWidgets.campoTexto(
               controller: _emailController,
               label: "Email",
@@ -188,32 +163,30 @@ class _RegisterPageState extends State<RegisterPage> {
               onToggle: () => setState(() => _verConfirm = !_verConfirm),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Cancelar",
-                    style: TextStyle(color: Colors.white70),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EstilosWWW.colorBordeTabla,
+                  foregroundColor: EstilosWWW.colorLetra,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Colors.white38, width: 1),
                   ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  style: EstilosWWW.botonOscuro,
-                  onPressed: _cargando ? null : signUp,
-                  child: _cargando
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text("Registrarse"),
-                ),
-              ],
+                onPressed: _cargando ? null : signUp,
+                child: _cargando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text("Registrarse"),
+              ),
             ),
           ],
         ),

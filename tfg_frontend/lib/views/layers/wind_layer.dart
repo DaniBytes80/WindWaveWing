@@ -4,17 +4,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:tfg_clima_malaga/domain/interpolators/weather_point.dart';
 
-// ============================================================
 //  WindLayer — flutter_map v7
-//  FIX DEFINITIVO: recibe MapCamera como parámetro explícito
+//  recibe MapCamera como parámetro explícito
 //  desde www_map_screen.dart en vez de intentar obtenerla
-//  del contexto (que falla en children de FlutterMap).
-// ============================================================
-
+//  del contexto
 class WindLayer extends StatefulWidget {
   final List<WeatherPoint> points;
   final TickerProvider vsync;
-  final MapCamera camera; // ✅ recibida desde fuera
+  final MapCamera camera;
 
   const WindLayer({
     super.key,
@@ -85,7 +82,7 @@ class _WindLayerState extends State<WindLayer>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => CustomPaint(
+      builder: (_, _) => CustomPaint(
         painter: _WindPainter(
           points: widget.points,
           particles: _particles,

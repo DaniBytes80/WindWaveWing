@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-//  clima_colores.dart
-//  ✅ FIX: colorLluvia acepta int (no double) para evitar
-//  el error "type 'double' is not a subtype of type 'int'"
-// ============================================================
-
+// Convierte la velocidad del viento (en nudos) a un color
 Color colorViento(double kn) {
   if (kn < 7) return const Color(0xFF64B5F6); // azul claro — calma
   if (kn < 14) return const Color(0xFF26C6DA); // cian — brisa suave
@@ -15,6 +10,7 @@ Color colorViento(double kn) {
   return const Color(0xFFEF5350); // rojo — temporal
 }
 
+// Convierte la dirección del viento a radianes para rotar el icono de flecha
 Color colorOla(double m) {
   if (m < 0.5) return const Color(0xFF90A4AE); // gris — calma
   if (m < 1.0) return const Color(0xFF66BB6A); // verde — suave
@@ -24,7 +20,7 @@ Color colorOla(double m) {
   return const Color(0xFFEF5350); // rojo — peligrosa
 }
 
-// ✅ FIX: parámetro int (se llama con .round() desde los widgets)
+// Convierte un porcentaje de lluvia a un color
 Color colorLluvia(int porcentaje) {
   if (porcentaje == 0) {
     return const Color(0xFF1565C0).withValues(alpha: 0.0); // transparente
@@ -36,6 +32,7 @@ Color colorLluvia(int porcentaje) {
   return const Color(0xFFAD1457); // magenta — tormenta
 }
 
+// Convierte la temperatura a un color
 Color colorTemperatura(double t) {
   if (t < 0) return const Color(0xFF1A237E); // azul oscuro — frío peligroso
   if (t < 10) return const Color(0xFF1565C0); // azul

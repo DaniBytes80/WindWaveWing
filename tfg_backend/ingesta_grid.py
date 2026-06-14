@@ -22,12 +22,10 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-# ─────────────────────────────────────────────────────────────
 #  GRID DE PUNTOS
 #  Paso de 2.5° → ~10.000 puntos globales
 #  Para zonas de interés (España, Mediterráneo, Atlántico norte)
 #  se puede reducir a 1° en un segundo paso si hace falta.
-# ─────────────────────────────────────────────────────────────
 def generar_grid(paso_lat=2.5, paso_lng=2.5):
     puntos = []
     lat = -85.0
@@ -40,12 +38,10 @@ def generar_grid(paso_lat=2.5, paso_lng=2.5):
     return puntos
 
 
-# ─────────────────────────────────────────────────────────────
 #  OPEN-METEO WEATHER (temperatura, viento, lluvia)
-#  Usamos la API batch de Open-Meteo para pedir múltiples
+#  Usa la API batch de Open-Meteo para pedir múltiples
 #  coordenadas en una sola petición → mucho más eficiente.
 #  Límite: 100 coordenadas por petición.
-# ─────────────────────────────────────────────────────────────
 def consultar_weather_batch(puntos_chunk):
     """
     puntos_chunk: lista de (lat, lng), máx 100 elementos
@@ -77,12 +73,9 @@ def consultar_weather_batch(puntos_chunk):
         print(f"  Error weather batch: {e}")
         return []
 
-
-# ─────────────────────────────────────────────────────────────
 #  OPEN-METEO MARINE (olas)
 #  Solo disponible en zonas oceánicas/costeras.
 #  Los puntos de interior simplemente devuelven error → se ignoran.
-# ─────────────────────────────────────────────────────────────
 def consultar_marine_batch(puntos_chunk):
     lats = ",".join(str(p[0]) for p in puntos_chunk)
     lngs = ",".join(str(p[1]) for p in puntos_chunk)
@@ -108,17 +101,11 @@ def consultar_marine_batch(puntos_chunk):
         return []
 
 
-# ─────────────────────────────────────────────────────────────
-#  CHUNKS
-# ─────────────────────────────────────────────────────────────
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-
-# ─────────────────────────────────────────────────────────────
 #  PROCESO PRINCIPAL
-# ─────────────────────────────────────────────────────────────
 def ingestar_grid():
     print(f"[{datetime.now()}] Iniciando ingesta de grid meteorológico...")
 
@@ -176,7 +163,7 @@ def ingestar_grid():
 
     print(f"\nTotal registros: {len(registros)}")
 
-    # ── Subir a Supabase en batches de 500 ───────────────────
+    # Subir a Supabase en batches de 500
     if registros:
         print("Subiendo a Supabase tabla clima_grid...")
 

@@ -34,9 +34,7 @@ class Perfil {
     required this.avatarUrl,
   });
 
-  // ============================================================
   // 1. Crear Perfil desde JSON de Supabase
-  // ============================================================
   factory Perfil.fromJson(Map<String, dynamic> json) {
     return Perfil(
       id: json['id'],
@@ -56,9 +54,7 @@ class Perfil {
     );
   }
 
-  // ============================================================
   // 2. Convertir Perfil a JSON
-  // ============================================================
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -78,9 +74,7 @@ class Perfil {
     };
   }
 
-  // ============================================================
   // 3. Copiar perfil modificando solo algunos campos
-  // ============================================================
   Perfil copyWith({
     String? nombre,
     String? telefono,

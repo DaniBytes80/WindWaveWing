@@ -11,6 +11,10 @@ class Alerta {
   final String? nivel;
   final String? mensaje;
 
+  final int frecuenciaHoras;
+  final int horaInicio;
+  final int horaFin;
+
   final DateTime fechaCreacion;
 
   Alerta({
@@ -22,11 +26,13 @@ class Alerta {
     this.disciplina,
     this.nivel,
     this.mensaje,
+    this.frecuenciaHoras = 4,
+    this.horaInicio = 7,
+    this.horaFin = 22,
     DateTime? fechaCreacion,
   }) : id = id ?? const Uuid().v4(),
        fechaCreacion = fechaCreacion ?? DateTime.now();
 
-  // Convertir a JSON para Supabase
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -37,11 +43,13 @@ class Alerta {
       'disciplina': disciplina,
       'nivel': nivel,
       'mensaje': mensaje,
+      'frecuencia_horas': frecuenciaHoras,
+      'hora_inicio': horaInicio,
+      'hora_fin': horaFin,
       'fecha_creacion': fechaCreacion.toIso8601String(),
     };
   }
 
-  // Crear desde JSON de Supabase
   factory Alerta.fromJson(Map<String, dynamic> json) {
     return Alerta(
       id: json['id'],
@@ -52,6 +60,9 @@ class Alerta {
       disciplina: json['disciplina'],
       nivel: json['nivel'],
       mensaje: json['mensaje'],
+      frecuenciaHoras: json['frecuencia_horas'] ?? 4,
+      horaInicio: json['hora_inicio'] ?? 7,
+      horaFin: json['hora_fin'] ?? 22,
       fechaCreacion: DateTime.parse(json['fecha_creacion']),
     );
   }

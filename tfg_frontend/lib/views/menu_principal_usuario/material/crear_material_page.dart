@@ -2,14 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tfg_clima_malaga/models/material_usuario.dart';
 import 'package:tfg_clima_malaga/services/material_service.dart';
-
-// ============================================================
-//  CrearMaterialPage — v2
-//  ✅ Campo medida sustituido por campos numéricos específicos
-//     según disciplina + tipo, con hints y validación de rango.
-//  ✅ El valor guardado en `medida` es siempre numérico (string)
-//     para que el script de alertas pueda compararlo.
-// ============================================================
+import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class CrearMaterialPage extends StatefulWidget {
   const CrearMaterialPage({super.key});
@@ -72,16 +65,26 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
     "Vela latina",
   ];
 
-  // ── Configuración del campo medida según disciplina+tipo ──
   _MedidaConfig? get _medidaConfig {
     if (_disciplina == null || _tipo == null) return null;
     return _getMedidaConfig(_disciplina!, _tipo!);
   }
 
+  String? get _descripcionHint {
+    if (_tipo == 'foil') {
+      return 'Ej: Mástil 75cm · Stab 280cm² · Fuselaje 60cm\n'
+          'Recuerda añadir el mástil y el stabilizer como materiales separados';
+    }
+    if (_tipo == 'vela') return 'Ej: Compatible con mástil RDM 460cm';
+    if (_tipo == 'botavara') return 'Ej: Regulable 160-220cm';
+    if (_tipo == 'mástil') return 'Ej: RDM, IMCS 25, compatible con vela 7.5m²';
+    return null;
+  }
+
   static _MedidaConfig? _getMedidaConfig(String disciplina, String tipo) {
     switch (disciplina) {
       case 'surf':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 35 · Para 90kg nivel Pro: 30-45L, Principiante: 60-130L',
@@ -90,7 +93,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 200,
             teclado: TextInputType.number,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -99,9 +103,10 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 3000,
             teclado: TextInputType.number,
           );
+        }
 
       case 'wingfoil':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 105 · Rango habitual: 60-150L',
@@ -110,7 +115,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 200,
             teclado: TextInputType.number,
           );
-        if (tipo == 'ala')
+        }
+        if (tipo == 'ala') {
           return _MedidaConfig(
             label: 'Superficie del ala (m²)',
             hint: 'Ej: 5.5 · Rango habitual: 2.5-9 m²',
@@ -120,7 +126,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -129,9 +136,10 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 3000,
             teclado: TextInputType.number,
           );
+        }
 
       case 'kitesurf':
-        if (tipo == 'cometa')
+        if (tipo == 'cometa') {
           return _MedidaConfig(
             label: 'Superficie de la cometa (m²)',
             hint: 'Ej: 12 · Rango habitual: 5-21 m²',
@@ -141,7 +149,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'tabla')
+        }
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Longitud de la tabla (cm)',
             hint: 'Ej: 138 · Rango habitual: 120-165 cm',
@@ -150,7 +159,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 180,
             teclado: TextInputType.number,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -159,9 +169,10 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 3000,
             teclado: TextInputType.number,
           );
+        }
 
       case 'windsurf':
-        if (tipo == 'tabla')
+        if (tipo == 'tabla') {
           return _MedidaConfig(
             label: 'Volumen de la tabla (litros)',
             hint: 'Ej: 130 · Rango habitual: 65-250L',
@@ -170,7 +181,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 280,
             teclado: TextInputType.number,
           );
-        if (tipo == 'vela')
+        }
+        if (tipo == 'vela') {
           return _MedidaConfig(
             label: 'Superficie de la vela (m²)',
             hint: 'Ej: 7.5 · Rango habitual: 3-13 m²',
@@ -180,7 +192,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             decimal: true,
             teclado: const TextInputType.numberWithOptions(decimal: true),
           );
-        if (tipo == 'botavara')
+        }
+        if (tipo == 'botavara') {
           return _MedidaConfig(
             label: 'Longitud de botavara (cm)',
             hint: 'Ej: 185 · Rango habitual: 140-230 cm',
@@ -189,7 +202,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 250,
             teclado: TextInputType.number,
           );
-        if (tipo == 'mástil')
+        }
+        if (tipo == 'mástil') {
           return _MedidaConfig(
             label: 'Altura del mástil (cm)',
             hint: 'Ej: 460 · Rango habitual: 340-550 cm',
@@ -198,7 +212,8 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 600,
             teclado: TextInputType.number,
           );
-        if (tipo == 'foil')
+        }
+        if (tipo == 'foil') {
           return _MedidaConfig(
             label: 'Front wing (cm²)',
             hint: 'Ej: 1450 · Rango habitual: 600-2500 cm²',
@@ -207,6 +222,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
             max: 3000,
             teclado: TextInputType.number,
           );
+        }
     }
     return null;
   }
@@ -221,7 +237,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
       return;
     }
 
-    // El valor de medida viene del controller numérico
     final medidaFinal = _medidaCtrl.text.trim().isEmpty
         ? null
         : _medidaCtrl.text.trim();
@@ -260,14 +275,17 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
     final config = _medidaConfig;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Añadir Material")),
+      backgroundColor: EstilosWWW.colorFondoPantalla,
+      appBar: AppBar(
+        title: const Text("Añadir Material"),
+        backgroundColor: EstilosWWW.colorFondoPantalla,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // ── DISCIPLINA ───────────────────────────────
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: "Disciplina"),
                 items: disciplinas
@@ -283,7 +301,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
               ),
               const SizedBox(height: 16),
 
-              // ── TIPO ─────────────────────────────────────
               if (_disciplina != null) ...[
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -301,7 +318,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 const SizedBox(height: 16),
               ],
 
-              // ── CLASE DE BARCO (vela ligera) ─────────────
               if (_disciplina == 'vela ligera' && _tipo == 'tipo de barco') ...[
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -316,9 +332,9 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 const SizedBox(height: 16),
               ],
 
-              // ── NOMBRE ───────────────────────────────────
               if (_tipo != null) ...[
                 TextFormField(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(
                     labelText: "Nombre (opcional)",
                   ),
@@ -327,51 +343,49 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                     if (v == null || v.trim().isEmpty) return null;
                     if (!RegExp(
                       r"^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,_-]{2,}$",
-                    ).hasMatch(v.trim()))
+                    ).hasMatch(v.trim())) {
                       return "Nombre no válido";
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
 
                 TextFormField(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Marca"),
                   onSaved: (v) => _marca = v?.trim(),
                 ),
                 const SizedBox(height: 8),
 
                 TextFormField(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Modelo"),
                   onSaved: (v) => _modelo = v?.trim(),
                 ),
                 const SizedBox(height: 8),
 
                 TextFormField(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
                   decoration: const InputDecoration(labelText: "Año"),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) {
                     if (v == null || v.isEmpty) return null;
                     final y = int.tryParse(v);
-                    if (y == null || y < 1980 || y > 2030)
+                    if (y == null || y < 1980 || y > 2030) {
                       return "Año no válido";
+                    }
                     return null;
                   },
                   onSaved: (v) => _ano = int.tryParse(v ?? ''),
                 ),
                 const SizedBox(height: 16),
 
-                // ── CAMPO MEDIDA INTELIGENTE ──────────────
                 if (config != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.blue.withValues(alpha: 0.3),
-                      ),
-                    ),
+                    decoration: EstilosWWW.decoracionSeccion,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -380,14 +394,17 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                             const Icon(
                               Icons.straighten,
                               size: 18,
-                              color: Colors.blue,
+                              color: EstilosWWW.colorAccent,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              config.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                            Expanded(
+                              child: Text(
+                                config.label,
+                                style: const TextStyle(
+                                  color: EstilosWWW.colorLetra,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -395,14 +412,15 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                         const SizedBox(height: 4),
                         Text(
                           config.hint,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: Colors.white54,
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _medidaCtrl,
+                          style: const TextStyle(color: EstilosWWW.colorLetra),
                           keyboardType: config.teclado,
                           inputFormatters: config.decimal
                               ? [
@@ -438,8 +456,15 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 ],
 
                 TextFormField(
-                  decoration: const InputDecoration(
+                  style: const TextStyle(color: EstilosWWW.colorLetra),
+                  decoration: InputDecoration(
                     labelText: "Descripción (opcional)",
+                    hintText: _descripcionHint,
+                    hintStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white38,
+                    ),
+                    hintMaxLines: 3,
                   ),
                   maxLines: 3,
                   onSaved: (v) => _descripcion = v?.trim(),
@@ -447,6 +472,7 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
                 const SizedBox(height: 24),
 
                 ElevatedButton(
+                  style: EstilosWWW.botonOscuro,
                   onPressed: _guardarMaterial,
                   child: const Text("Guardar material"),
                 ),
@@ -459,7 +485,6 @@ class _CrearMaterialPageState extends State<CrearMaterialPage> {
   }
 }
 
-// ── Configuración del campo medida ────────────────────────────
 class _MedidaConfig {
   final String label;
   final String hint;

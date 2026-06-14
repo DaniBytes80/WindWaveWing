@@ -9,12 +9,14 @@ class ClimaTablaHoras extends StatefulWidget {
   final List<ClimaModelo> datos;
   final DateTime fechaDia;
   final void Function(DateTime) onHoraSeleccionada;
+  final int horaInicial;
 
   const ClimaTablaHoras({
     super.key,
     required this.datos,
     required this.fechaDia,
     required this.onHoraSeleccionada,
+    this.horaInicial = 0,
   });
 
   @override
@@ -23,6 +25,31 @@ class ClimaTablaHoras extends StatefulWidget {
 
 class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
   DateTime? _activa;
+  late final ScrollController _scrollCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl = ScrollController();
+    if (widget.horaInicial > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final offset = widget.horaInicial * 54.0;
+        if (_scrollCtrl.hasClients) {
+          _scrollCtrl.animateTo(
+            offset.clamp(0.0, _scrollCtrl.position.maxScrollExtent),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +57,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
       ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
 
     return Container(
-      height: 130,
+      height: 165,
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
@@ -42,6 +69,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
           const SizedBox(width: 4),
           Expanded(
             child: SingleChildScrollView(
+              controller: _scrollCtrl,
               scrollDirection: Axis.horizontal,
               child: Row(children: ordenados.map(_celdaHora).toList()),
             ),
@@ -68,6 +96,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
           ],
         ),
         Text("Ola", style: TextStyle(color: Colors.white, fontSize: 12)),
+        Text("Periodo", style: TextStyle(color: Colors.white, fontSize: 12)),
         Text("Lluvia", style: TextStyle(color: Colors.white, fontSize: 12)),
         Text("Temp", style: TextStyle(color: Colors.white, fontSize: 12)),
       ],
@@ -81,6 +110,8 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
         _activa != null &&
         _activa!.day == local.day &&
         _activa!.hour == local.hour;
+
+    final dirOlaAngle = _parseDireccion(c.direccionOla);
 
     return GestureDetector(
       onTap: () {
@@ -102,6 +133,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
+            // Hora
             Text(
               hora,
               style: TextStyle(
@@ -111,8 +143,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
               ),
             ),
 
-            // Viento — ✅ FIX: direccionViento es String en el modelo
-            //          _parseDireccion() lo convierte siempre a double
+            // Viento
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
@@ -140,7 +171,7 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
               ),
             ),
 
-            // Ola
+            // Ola con dirección
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
@@ -148,10 +179,38 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
                 color: colorOla(c.alturaOla),
                 borderRadius: BorderRadius.circular(4),
               ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Transform.rotate(
+                    angle: dirOlaAngle,
+                    child: const Icon(
+                      Icons.arrow_upward,
+                      size: 11,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Text(
+                    "${c.alturaOla.toStringAsFixed(1)}m",
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+
+            // Periodo de ola
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+              decoration: BoxDecoration(
+                color: colorOla(c.alturaOla).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(4),
+              ),
               child: Text(
-                "${c.alturaOla.toStringAsFixed(1)}m",
+                c.periodoOla > 0 ? "${c.periodoOla.toStringAsFixed(0)}s" : "-",
                 style: const TextStyle(color: Colors.white, fontSize: 10),
-                textAlign: TextAlign.center,
               ),
             ),
 
@@ -198,16 +257,10 @@ class _ClimaTablaHorasState extends State<ClimaTablaHoras> {
     );
   }
 
-  // ✅ FIX CLAVE: acepta tanto String ("N","SE"...) como número ("95.0")
-  // porque la BD puede tener datos antiguos en cardinal y nuevos en grados
   double _parseDireccion(String dir) {
     const pi = 3.14159265358979;
-
-    // Intentar parsear como número primero (datos nuevos: "95.0")
     final num = double.tryParse(dir.trim());
     if (num != null) return num * pi / 180;
-
-    // Si no, convertir de cardinal a grados (datos antiguos: "N", "SE"...)
     const cardinal = {
       'N': 0.0,
       'NNE': 22.5,

@@ -5,6 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 
+// Diálogo para editar el perfil del usuario
+// Permite al usuario actualizar su información personal, preferencias y avatar
+// Incluye validaciones para los campos de entrada y manejo de imágenes
+// Se conecta a Supabase para guardar los cambios en la base de datos y en el almacenamiento
+// El diálogo se muestra como un widget modal y se cierra al guardar o cancelar
+// El estado del diálogo se maneja mediante un StatefulWidget para permitir la actualización
+//  de la interfaz en tiempo real
 class EditarPerfilDialog extends StatefulWidget {
   const EditarPerfilDialog({super.key});
 
@@ -200,7 +207,27 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ⭐ AVATAR + BOTÓN X
+              Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white54,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // AVATAR
               Stack(
                 alignment: Alignment.topRight,
                 children: [
@@ -352,22 +379,20 @@ class _EditarPerfilDialogState extends State<EditarPerfilDialog> {
 
               const SizedBox(height: 20),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      "Cancelar",
-                      style: TextStyle(color: Colors.white70),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: EstilosWWW.colorBordeTabla,
+                    foregroundColor: EstilosWWW.colorLetra,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(color: Colors.white38, width: 1),
                     ),
                   ),
-                  ElevatedButton(
-                    style: EstilosWWW.botonOscuro,
-                    onPressed: guardar,
-                    child: const Text("Aceptar"),
-                  ),
-                ],
+                  onPressed: guardar,
+                  child: const Text("Aceptar"),
+                ),
               ),
             ],
           ),

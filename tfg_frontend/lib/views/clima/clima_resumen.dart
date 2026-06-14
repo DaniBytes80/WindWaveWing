@@ -2,15 +2,7 @@ import 'dart:math' as math;
 import 'package:tfg_clima_malaga/models/clima_modelo.dart';
 import 'clima_utils.dart';
 
-// ============================================================
-//  calcularResumen
-//
-//  ✅ FIX dirección viento: usaba moda de strings cardinales
-//     → ahora usa promedio vectorial de grados (correcto)
-//     Acepta tanto "95.0" (grados float) como "N","SE" (cardinal)
-// ============================================================
 Map<String, dynamic> calcularResumen(List<ClimaModelo> datos) {
-  // ── Dirección: promedio vectorial ──────────────────────────
   // La media aritmética de ángulos es incorrecta (350°+10°=180° ≠ 0°)
   // El promedio vectorial es el método correcto (igual que Windy/AEMET)
   double sumX = 0;
@@ -25,7 +17,6 @@ Map<String, dynamic> calcularResumen(List<ClimaModelo> datos) {
       math.atan2(sumY / datos.length, sumX / datos.length) * 180 / math.pi;
   final dirFinal = (dirMedia + 360) % 360; // normalizar 0-360
 
-  // ── Resto de valores: media aritmética ────────────────────
   final vientoMedio =
       datos.map((c) => c.velocidadViento).reduce((a, b) => a + b) /
       datos.length;
@@ -49,8 +40,7 @@ Map<String, dynamic> calcularResumen(List<ClimaModelo> datos) {
   };
 }
 
-// ── Convierte String a grados float ───────────────────────────
-// Acepta "95.0" (datos nuevos ingesta v3) y "N","SE" (datos antiguos)
+// Acepta "95.0" (datos ingesta v3) y "N","SE"
 double _parseDirToGrados(String dir) {
   final num = double.tryParse(dir.trim());
   if (num != null) return num;

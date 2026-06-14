@@ -4,9 +4,7 @@ import '../models/perfil.dart';
 class PerfilBd {
   final _supabase = Supabase.instance.client;
 
-  // ============================================================
   // 1. Registrar un nuevo usuario + crear su perfil
-  // ============================================================
   Future<Perfil?> registrarPerfil({
     required String nombre,
     required String email,

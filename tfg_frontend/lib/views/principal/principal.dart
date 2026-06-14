@@ -28,6 +28,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
 
   @override
   void initState() {
+    // Carga los favoritos y la predicción inicial para el spot actual al iniciar la app
     super.initState();
     SpotManager().cargarFavoritos();
     _cargarClimaInicial();
@@ -36,6 +37,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
   void _toggleMenu() => setState(() => _menuAbierto = !_menuAbierto);
 
   Future<void> _cargarClimaInicial() async {
+    // Carga la predicción para el spot actual al iniciar la app
     final spot = SpotManager().spotActual;
     if (spot != null) {
       await SpotManager().cargarPrediccion(spot.id);
@@ -44,6 +46,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
   }
 
   Future<void> actualizarSpot(Spot spotEncontrado) async {
+    // Cambia el spot actual y recarga la predicción para ese spot
     final spotManager = SpotManager();
     await spotManager.cambiarSpot(spotEncontrado);
     setState(() => _horaSeleccionada = null);
@@ -52,6 +55,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
   }
 
   String _labelMapa() {
+    // Devuelve la etiqueta de la hora seleccionada en formato "EEE d MMM  HH:00h"
     if (_horaSeleccionada == null) return '';
     final l = _horaSeleccionada!.toLocal();
     final dia = DateFormat('EEE d MMM', 'es_ES').format(l);
@@ -126,28 +130,30 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
 
             body: Stack(
               children: [
-                // ── 0. MAPA ──────────────────────────────────
+                // Muestra el mapa con la capa activa y los datos del clima
+                // para el spot actual y la hora seleccionada
                 Positioned.fill(
                   child: WwwMapScreen(
-                    spots: listaSpots,
-                    spotActual: spotActual,
-                    clima: clima,
-                    capaActiva: _capaActiva,
-                    horaSeleccionada: _horaSeleccionada,
-                    onSpotTap: actualizarSpot,
+                    // Muestra el mapa con la capa activa y los datos del clima
+                    spots: listaSpots, // lista de spots para mostrar en el mapa
+                    spotActual: spotActual, // spot actual seleccionado
+                    clima: clima, // datos meteorológicos del spot actual
+                    capaActiva:
+                        _capaActiva, // capa activa (viento, olas, lluvia, temperatura)
+                    horaSeleccionada:
+                        _horaSeleccionada, // hora seleccionada para mostrar los datos del clima
+                    onSpotTap:
+                        actualizarSpot, // al tocar un spot en el mapa, se actualiza el spot actual
                   ),
                 ),
 
-                // ── 1. BUSCADOR (fila con botón menú) ────────
-                // ✅ FIX: buscador y botón menú en la misma fila
-                // para evitar solapamiento con la etiqueta de hora
+                // Muestra el buscador y el botón de menú en la parte superior
                 Positioned(
                   top: 15,
                   left: 15,
                   right: 15,
                   child: Row(
                     children: [
-                      // Buscador
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
@@ -171,7 +177,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Botón menú
+                      // Botón menú de capas que llama a MenuAnimado
                       GestureDetector(
                         onTap: _toggleMenu,
                         child: Image.asset(
@@ -184,7 +190,8 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                   ),
                 ),
 
-                // ── 2. MENÚ ANIMADO ──────────────────────────
+                // Muestra el menu animado con las opciones de capas (viento, olas, lluvia, temperatura)
+                // Se comunica con www_map_screen.dart para cambiar la capa activa.
                 MenuAnimado(
                   abierto: _menuAbierto,
                   onClose: _toggleMenu,
@@ -206,7 +213,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                   }),
                 ),
 
-                // ── 3. TABLA CLIMA + ETIQUETA HORA ───────────
+                // Presenta la tabla de clima en la parte inferior, con la hora seleccionada encima de la tabla.
                 Positioned(
                   left: 0,
                   right: 0,
@@ -216,8 +223,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // ✅ Etiqueta hora ENCIMA de la tabla,
-                        // nunca solapada con el buscador
+                        // Muestra la hora seleccionada en un contenedor con estilo, y permite deseleccionarla al tocarla.
                         if (_horaSeleccionada != null)
                           GestureDetector(
                             onTap: () =>
@@ -259,7 +265,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                               ),
                             ),
                           ),
-
+                        // Muestra la tabla de clima con los datos meteorológicos del spot actual
                         WWWTablaClima(
                           datosMeteorologicos: clima,
                           onHoraSeleccionada: (hora) =>

@@ -43,7 +43,7 @@ class _WwwMapScreenState extends State<WwwMapScreen>
   String? _errorMsg;
   DateTime _ultimaCarga = DateTime(2000);
 
-  // ✅ Cámara actual del mapa — se actualiza en onMapEvent
+  // Cámara actual del mapa — se actualiza en onMapEvent
   MapCamera? _camera;
 
   @override
@@ -86,11 +86,12 @@ class _WwwMapScreenState extends State<WwwMapScreen>
       );
 
       _ultimaCarga = DateTime.now();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _gridData = grid;
           _errorMsg = grid.isEmpty ? 'Sin datos del grid' : null;
         });
+      }
     } catch (e) {
       if (mounted) setState(() => _errorMsg = 'Error cargando mapa');
     } finally {
@@ -186,7 +187,7 @@ class _WwwMapScreenState extends State<WwwMapScreen>
             minZoom: 3.0,
             maxZoom: 16.0,
             onMapEvent: (event) {
-              // ✅ Actualizar cámara en cada evento del mapa
+              // Actualizar cámara en cada evento del mapa
               if (mounted) {
                 setState(() => _camera = _mapController.camera);
               }
@@ -204,7 +205,7 @@ class _WwwMapScreenState extends State<WwwMapScreen>
               subdomains: const ['a', 'b', 'c'],
             ),
 
-            // ✅ Pasar camera explícitamente a cada layer
+            // Pasar cámara explícitamente a cada layer
             if (hayDatos) ...[
               if (widget.capaActiva == 'viento')
                 WindLayer(points: puntos, vsync: this, camera: camera),

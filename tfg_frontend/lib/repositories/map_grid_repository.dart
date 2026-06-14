@@ -2,9 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tfg_clima_malaga/domain/interpolators/weather_point.dart';
 
-// ============================================================
 //  MapGridData — contenedor de los 4 grids meteorológicos
-// ============================================================
 class MapGridData {
   final List<WeatherPoint> wind;
   final List<WeatherPoint> wave;
@@ -24,11 +22,9 @@ class MapGridData {
   bool get isEmpty => wind.isEmpty;
 }
 
-// ============================================================
 //  MapGridRepository
 //  Consulta la tabla clima_grid de Supabase via RPC.
 //  Caché local de 30 min para no saturar Supabase.
-// ============================================================
 class MapGridRepository {
   static final MapGridRepository _instance = MapGridRepository._internal();
   factory MapGridRepository() => _instance;
@@ -149,10 +145,10 @@ class MapGridRepository {
         );
       }
 
-      debugPrint('✅ Grid: ${rows.length} puntos cargados');
+      debugPrint('v Grid: ${rows.length} puntos cargados');
       return MapGridData(wind: wind, wave: wave, rain: rain, temp: temp);
     } catch (e) {
-      debugPrint('❌ Error clima_grid: $e');
+      debugPrint('x Error clima_grid: $e');
       return _cache ?? MapGridData.empty();
     }
   }

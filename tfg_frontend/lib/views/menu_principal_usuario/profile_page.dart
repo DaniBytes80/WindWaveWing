@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
-import 'package:tfg_clima_malaga/widgets/editar_perfil_dialog.dart';
+import 'package:tfg_clima_malaga/views/menu_principal_usuario/editar_perfil_dialog.dart';
 
 class ProfileWidget extends StatelessWidget {
   const ProfileWidget({super.key});
@@ -24,7 +24,6 @@ class ProfileWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ⭐ AVATAR
           CircleAvatar(
             radius: 45,
             backgroundColor: Colors.white24,
@@ -39,7 +38,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // ⭐ NOMBRE
           Text(
             user.nombre ?? "",
             style: const TextStyle(
@@ -49,7 +47,6 @@ class ProfileWidget extends StatelessWidget {
             ),
           ),
 
-          // ⭐ EMAIL
           Text(
             user.email,
             style: const TextStyle(color: Colors.white70, fontSize: 13),
@@ -57,7 +54,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ⭐ TELÉFONO
           if (user.telefono != null && user.telefono!.isNotEmpty)
             Text(
               "📞 ${user.telefono}",
@@ -66,7 +62,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ⭐ PESO
           if (user.pesoKg != null)
             Text(
               "⚖️ ${user.pesoKg} kg",
@@ -75,7 +70,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ⭐ NOTIFICACIONES
           Text(
             user.notificacionesActivas
                 ? "🔔 Notificaciones activas"
@@ -85,7 +79,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ⭐ DEPORTES
           Wrap(
             spacing: 10,
             runSpacing: 6,
@@ -100,7 +93,6 @@ class ProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 25),
 
-          // ⭐ BOTÓN EDITAR PERFIL
           ElevatedButton(
             style: EstilosWWW.botonOscuro,
             onPressed: () {

@@ -11,7 +11,7 @@ import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class WWWTablaClima extends StatelessWidget {
   final List<ClimaModelo> datosMeteorologicos;
-  final void Function(DateTime) onHoraSeleccionada; // ✅ NUEVO
+  final void Function(DateTime) onHoraSeleccionada;
 
   const WWWTablaClima({
     super.key,
@@ -37,7 +37,7 @@ class WWWTablaClima extends StatelessWidget {
           );
 
     return Container(
-      height: 130,
+      height: 165,
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.55),
@@ -70,6 +70,7 @@ class WWWTablaClima extends StatelessWidget {
           ],
         ),
         Text("Ola", style: TextStyle(color: Colors.white, fontSize: 12)),
+        Text("Periodo", style: TextStyle(color: Colors.white, fontSize: 12)),
         Text("Lluvia", style: TextStyle(color: Colors.white, fontSize: 12)),
         Text("Temp", style: TextStyle(color: Colors.white, fontSize: 12)),
       ],
@@ -89,7 +90,6 @@ class WWWTablaClima extends StatelessWidget {
             final nombreDia = DateFormat('EEE', 'es_ES').format(fecha);
             final fechaCorta = DateFormat('d MMM', 'es_ES').format(fecha);
             final resumen = calcularResumen(entry.value);
-
             return GestureDetector(
               onTap: () => _mostrarTablaHoras(context, entry.value, fecha),
               child: _celdaDia(nombreDia, fechaCorta, resumen),
@@ -105,6 +105,9 @@ class WWWTablaClima extends StatelessWidget {
     String fechaCorta,
     Map<String, dynamic> resumen,
   ) {
+    final dirOlaAngle = _dirGradosToAngle(resumen["dirOla"] ?? 0);
+    final periodo = resumen["periodo"] ?? 0.0;
+
     return Container(
       width: 52,
       margin: const EdgeInsets.symmetric(horizontal: 1),
@@ -116,6 +119,7 @@ class WWWTablaClima extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // Fecha
           Column(
             children: [
               Text(
@@ -161,7 +165,7 @@ class WWWTablaClima extends StatelessWidget {
             ),
           ),
 
-          // Ola
+          // Ola con dirección
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -169,10 +173,40 @@ class WWWTablaClima extends StatelessWidget {
               color: colorOla(double.parse(resumen["ola"])),
               borderRadius: BorderRadius.circular(4),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Transform.rotate(
+                  angle: dirOlaAngle,
+                  child: const Icon(
+                    Icons.arrow_upward,
+                    color: Colors.white,
+                    size: 11,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  "${resumen["ola"]}m",
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+
+          // Periodo de ola
+          Container(
+            width: double.infinity,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: colorOla(
+                double.parse(resumen["ola"]),
+              ).withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(4),
+            ),
             child: Text(
-              "${resumen["ola"]}m",
+              periodo > 0 ? "${periodo.toStringAsFixed(0)}s" : "-",
               style: const TextStyle(color: Colors.white, fontSize: 11),
-              textAlign: TextAlign.center,
             ),
           ),
 
@@ -218,7 +252,6 @@ class WWWTablaClima extends StatelessWidget {
     );
   }
 
-  // ── Tabla de horas en bottom sheet ────────────────────────
   void _mostrarTablaHoras(
     BuildContext context,
     List<ClimaModelo> datosDia,
@@ -226,10 +259,16 @@ class WWWTablaClima extends StatelessWidget {
   ) {
     final nombreDia = DateFormat('EEEE', 'es_ES').format(fecha);
     final numeroDia = DateFormat('d MMMM', 'es_ES').format(fecha);
+    final ahora = DateTime.now();
+    final esHoy =
+        fecha.year == ahora.year &&
+        fecha.month == ahora.month &&
+        fecha.day == ahora.day;
+    final horaInicial = esHoy ? ahora.hour : 0;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // ✅ fondo transparente
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) {
         return Padding(
@@ -255,13 +294,11 @@ class WWWTablaClima extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // ✅ Nueva tabla horizontal de horas
               ClimaTablaHoras(
                 datos: datosDia,
                 fechaDia: fecha,
+                horaInicial: horaInicial,
                 onHoraSeleccionada: (hora) {
-                  // Cierra el bottom sheet y actualiza el mapa
                   Navigator.pop(context);
                   onHoraSeleccionada(hora);
                 },
@@ -273,12 +310,9 @@ class WWWTablaClima extends StatelessWidget {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────
-  // direccionViento ahora es double (grados) desde ingesta v3
   double _dirGradosToAngle(dynamic dir) {
     const pi = 3.14159265358979;
     if (dir is num) return dir.toDouble() * pi / 180;
-    // fallback si aún viene cardinal (datos antiguos en BD)
     return direccionToAngle(dir.toString());
   }
 

@@ -15,7 +15,7 @@ class Spot {
 
   final DateTime createdAt;
 
-  final String? idBoya; // ⭐ NUEVO
+  final String? idBoya;
 
   Spot({
     required this.id,
@@ -34,7 +34,7 @@ class Spot {
   });
 
   factory Spot.fromJson(Map<String, dynamic> json) {
-    // ⭐ Coordenadas correctas: [lng, lat]
+    // Coordenadas correctas: [lng, lat]
     final coords = json['pointjson']?['coordinates'] ?? [0.0, 0.0];
 
     return Spot(
@@ -42,15 +42,15 @@ class Spot {
       nombre: json['nombre'],
       icono: json['icono'],
       camUrl: json['cam_url'],
-      lat: (coords[1] as num).toDouble(), // ⭐ lat = segundo valor
-      lng: (coords[0] as num).toDouble(), // ⭐ lng = primer valor
+      lat: (coords[1] as num).toDouble(), // lat = segundo valor
+      lng: (coords[0] as num).toDouble(), // lng = primer valor
       isSurf: json['is_surf'] ?? false,
       isKitesurf: json['is_kitesurf'] ?? false,
       isWindsurf: json['is_windsurf'] ?? false,
       isWing: json['is_wing'] ?? false,
       isSail: json['is_sail'] ?? false,
       createdAt: DateTime.parse(json['created_at']),
-      idBoya: json['id_boya'], // ⭐ NUEVO
+      idBoya: json['id_boya'],
     );
   }
 }

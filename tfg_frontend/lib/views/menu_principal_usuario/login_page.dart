@@ -22,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _cargando = false;
-  bool _verPassword = false; // ✅ toggle ver contraseña
+  bool _verPassword = false;
 
   Future<void> _postLogin() async {
     await UserManager().cargarPerfil();
@@ -60,11 +60,11 @@ class _LoginPageState extends State<LoginPage> {
       await _postLogin();
     } on AuthException catch (e) {
       if (!mounted) return;
-      if (e.message.toLowerCase().contains('email not confirmed')) {
-        _snack("Debes confirmar tu email antes de iniciar sesión.");
-      } else {
-        _snack("Email o contraseña incorrectos.");
-      }
+      _snack(
+        e.message.toLowerCase().contains('email not confirmed')
+            ? "Debes confirmar tu email antes de iniciar sesión."
+            : "Email o contraseña incorrectos.",
+      );
     } catch (e) {
       if (mounted) _snack("Error de conexión. Inténtalo de nuevo.");
     } finally {
@@ -107,19 +107,19 @@ class _LoginPageState extends State<LoginPage> {
     ),
   );
 
-  Widget _socialIcon({required IconData icon, required VoidCallback onTap}) {
+  Widget _iconoSocial({required IconData icon, required VoidCallback onTap}) {
     return InkWell(
       onTap: _cargando ? null : onTap,
       borderRadius: BorderRadius.circular(22),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: EstilosWWW.colorLetra.withValues(alpha: 0.1),
+          color: EstilosWWW.colorAzulMedio,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white24),
+          border: Border.all(color: EstilosWWW.colorAzulBorde),
         ),
-        child: Icon(icon, size: 22, color: EstilosWWW.colorLetra),
+        child: Icon(icon, size: 24, color: EstilosWWW.colorLetra),
       ),
     );
   }
@@ -130,21 +130,22 @@ class _LoginPageState extends State<LoginPage> {
       resizeToAvoidBottomInset: false,
       backgroundColor: EstilosWWW.colorFondoPantalla.withValues(alpha: 0.9),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
         children: [
+          // Email
           TextField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: "Email"),
-            style: TextStyle(color: EstilosWWW.colorLetra),
+            style: const TextStyle(color: EstilosWWW.colorLetra),
             keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: "Email"),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          // ✅ Campo contraseña con toggle ver/ocultar
+          // Contraseña
           TextField(
             controller: _passwordController,
             obscureText: !_verPassword,
-            style: TextStyle(color: EstilosWWW.colorLetra),
+            style: const TextStyle(color: EstilosWWW.colorLetra),
             decoration: InputDecoration(
               labelText: "Contraseña",
               suffixIcon: IconButton(
@@ -156,8 +157,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
+          // ✅ Botón Acceder con estilo homogéneo
           ElevatedButton.icon(
             icon: _cargando
                 ? const SizedBox(
@@ -168,39 +170,34 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.email),
-            label: const Text("Acceder"),
+                : const Icon(Icons.login),
+            label: const Text("Acceso"),
             onPressed: _cargando ? null : login,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 45),
-            ),
+            style: EstilosWWW.botonOscuro,
           ),
           const SizedBox(height: 28),
 
+          // Iconos sociales
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _socialIcon(icon: Icons.g_mobiledata, onTap: loginGoogle),
+              _iconoSocial(icon: Icons.g_mobiledata, onTap: loginGoogle),
               const SizedBox(width: 20),
-              _socialIcon(icon: Icons.fingerprint, onTap: loginBiometria),
+              _iconoSocial(icon: Icons.fingerprint, onTap: loginBiometria),
             ],
           ),
           const SizedBox(height: 28),
 
+          // Enlace registro
           Center(
             child: Text.rich(
               TextSpan(
                 text: '¿No estás registrado? ',
-                style: TextStyle(color: EstilosWWW.colorLetra, fontSize: 13),
+                style: EstilosWWW.textoSecundario,
                 children: [
                   TextSpan(
                     text: 'Regístrate',
-                    style: TextStyle(
-                      color: EstilosWWW.colorLetra,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
+                    style: EstilosWWW.linkRegistro,
                     recognizer: TapGestureRecognizer()
                       ..onTap = () => showDialog(
                         context: context,
@@ -208,11 +205,14 @@ class _LoginPageState extends State<LoginPage> {
                           alpha: 0.5,
                         ),
                         builder: (_) => Dialog(
-                          backgroundColor: EstilosWWW.colorFondoPantalla,
+                          backgroundColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
                           ),
-                          child: const RegisterPage(),
+                          child: Container(
+                            decoration: EstilosWWW.decoracionDialog,
+                            child: const RegisterPage(),
+                          ),
                         ),
                       ),
                   ),

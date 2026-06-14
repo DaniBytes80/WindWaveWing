@@ -22,13 +22,13 @@ def _obtener_access_token():
         credentials.refresh(google.auth.transport.requests.Request())
         return credentials.token
     except Exception as e:
-        print(f"    ❌ Error token OAuth2: {e}")
+        print(f"  Error token OAuth2: {e}")
         return None
 
 
 def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
     if not FIREBASE_SA_JSON:
-        print("    ⚠️  FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
+        print("    FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
         return False
     access_token = _obtener_access_token()
     if not access_token:
@@ -62,11 +62,7 @@ def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
         print(f"  Error enviando push: {e}")
         return False
 
-
-# ─────────────────────────────────────────────────────────────
 #  DATOS
-# ─────────────────────────────────────────────────────────────
-
 def obtener_clima_spot(spot_id):
     try:
         hace_15min = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
@@ -248,23 +244,23 @@ def evaluar_alertas():
         if not disciplina or not nivel:
             continue
 
-        # ── Horario útil ──────────────────────────────────────
+        # Horario útil
         if not en_horario_util(hora_inicio, hora_fin):
             print(f"   Fuera de horario ({hora_inicio}:00-{hora_fin}:00)")
             continue
 
-        # ── Notificaciones activas en perfil ──────────────────
+        # Notificaciones activas en perfil 
         perfil = obtener_perfil(user_id)
         if not perfil.get("notificaciones_activas", True):
             print("  Notificaciones desactivadas")
             continue
 
-        # ── Anti-spam con frecuencia configurable ─────────────
+        # Anti-spam con frecuencia configurable 
         if ya_notificado_reciente(user_id, spot_id, horas=frecuencia_h):
             print(f"  Ya notificado en las últimas {frecuencia_h}h")
             continue
 
-        # ── Clima ─────────────────────────────────────────────
+        # Clima 
         clima, fuente = obtener_clima_spot(spot_id)
         if not clima:
             print("  Sin datos de clima")
@@ -274,7 +270,7 @@ def evaluar_alertas():
         ola    = clima.get("altura_ola", 0)
         print(f"    Clima [{fuente}]: {viento}kn · {ola}m")
 
-        # ── Reglas y materiales ───────────────────────────────
+        # Reglas y materiales 
         reglas     = obtener_reglas(disciplina, nivel)
         materiales = obtener_materiales(user_id, disciplina)
         peso_kg    = perfil.get("peso_kg")
@@ -294,13 +290,13 @@ def evaluar_alertas():
         mat_nombre = material_ok.get("nombre") or material_ok.get("modelo", "tu material")
         print(f"  Material válido: {mat_nombre}")
 
-        # ── Token FCM ─────────────────────────────────────────
+        # Token FCM 
         token = obtener_token_fcm(user_id)
         if not token:
             print("   Sin token FCM")
             continue
 
-        # ── Mensaje ───────────────────────────────────────────
+        # Mensaje 
         msg    = alerta.get("mensaje", "").strip()
         cuerpo = msg if msg else (
             f"{disciplina.capitalize()} · Nivel {nivel}\n"

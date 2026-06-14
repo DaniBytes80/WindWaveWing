@@ -42,8 +42,9 @@ class _WavePainter extends CustomPainter {
       if (center.dx < -radius ||
           center.dx > size.width + radius ||
           center.dy < -radius ||
-          center.dy > size.height + radius)
+          center.dy > size.height + radius) {
         continue;
+      }
 
       final color = _colorForHeight(height);
       final opacity = (height / 6.0).clamp(0.08, 0.60);

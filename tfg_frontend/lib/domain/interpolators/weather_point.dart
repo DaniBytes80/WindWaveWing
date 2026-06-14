@@ -1,7 +1,5 @@
-// ============================================================
 //  WeatherPoint — punto con posición + valor + dirección
 //  Usado por todos los CustomPainter de capas meteorológicas
-// ============================================================
 
 // ignore_for_file: file_names
 

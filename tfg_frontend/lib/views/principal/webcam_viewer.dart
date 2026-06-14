@@ -1,17 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:video_player/video_player.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-// ============================================================
-//  WebcamViewer
-//
-//  Orden de prioridad:
-//  1. HLS (.m3u8)      → video_player nativo
-//  2. MJPEG/imagen     → Image.network con refresco
-//  3. URL web          → InAppWebView (dentro de la app)
-//  4. Fallback         → botón abrir en navegador externo
-// ============================================================
 
 class WebcamViewer extends StatefulWidget {
   final String url;
@@ -25,7 +14,6 @@ class _WebcamViewerState extends State<WebcamViewer> {
   VideoPlayerController? _videoCtrl;
 
   _TipoCam _tipo = _TipoCam.cargando;
-  bool _error = false;
 
   @override
   void initState() {
@@ -37,7 +25,7 @@ class _WebcamViewerState extends State<WebcamViewer> {
     final url = widget.url.trim().toLowerCase();
 
     if (url.contains('.m3u8')) {
-      // ── HLS streaming ──────────────────────────────────
+      // HLS streaming
       try {
         _videoCtrl = VideoPlayerController.networkUrl(
           Uri.parse(widget.url.trim()),
@@ -58,10 +46,10 @@ class _WebcamViewerState extends State<WebcamViewer> {
         url.contains('.png') ||
         url.contains('mjpeg') ||
         url.contains('mjpg')) {
-      // ── Imagen estática o MJPEG ─────────────────────────
+      // Imagen estática o MJPEG
       if (mounted) setState(() => _tipo = _TipoCam.imagen);
     } else {
-      // ── URL web → InAppWebView ──────────────────────────
+      // URL web → InAppWebView
       if (mounted) setState(() => _tipo = _TipoCam.web);
     }
   }
@@ -86,8 +74,6 @@ class _WebcamViewerState extends State<WebcamViewer> {
           child: Stack(
             children: [
               _contenido(),
-
-              // X cerrar
               Positioned(
                 right: 4,
                 top: 4,
@@ -113,9 +99,8 @@ class _WebcamViewerState extends State<WebcamViewer> {
     );
   }
 
-  Widget _contenido() {
+  Widget _contenido() { 
     switch (_tipo) {
-      // ── Cargando ───────────────────────────────────────
       case _TipoCam.cargando:
         return const Center(
           child: Column(
@@ -131,7 +116,7 @@ class _WebcamViewerState extends State<WebcamViewer> {
           ),
         );
 
-      // ── HLS video ─────────────────────────────────────
+      // HLS video
       case _TipoCam.hls:
         if (_videoCtrl == null || !_videoCtrl!.value.isInitialized) {
           return const Center(
@@ -145,11 +130,11 @@ class _WebcamViewerState extends State<WebcamViewer> {
           ),
         );
 
-      // ── Imagen / MJPEG ────────────────────────────────
+      // Imagen / MJPEG
       case _TipoCam.imagen:
         return _ImagenCamara(url: widget.url);
 
-      // ── Web (InAppWebView dentro de la app) ───────────
+      // Web (InAppWebView dentro de la app)
       case _TipoCam.web:
         return InAppWebView(
           initialUrlRequest: URLRequest(url: WebUri(widget.url.trim())),
@@ -161,17 +146,15 @@ class _WebcamViewerState extends State<WebcamViewer> {
           ),
           onReceivedError: (ctrl, req, err) {
             // Si falla el WebView → mostrar botón navegador externo
-            if (mounted) setState(() => _error = true);
+            if (mounted) {}
           },
         );
     }
   }
 }
 
-// ─────────────────────────────────────────────────────────────
 //  _ImagenCamara — refresca la imagen cada 5 segundos
-//  (para cámaras que sirven JPG estático actualizado)
-// ─────────────────────────────────────────────────────────────
+//    para cámaras que sirven JPG estático actualizado
 class _ImagenCamara extends StatefulWidget {
   final String url;
   const _ImagenCamara({required this.url});

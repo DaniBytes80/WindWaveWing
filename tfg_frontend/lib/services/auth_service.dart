@@ -7,7 +7,7 @@ class AuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final FlutterSecureStorage _secure = const FlutterSecureStorage();
 
-  // ── Login email ────────────────────────────────────────────
+  // Login email
   Future<AuthResponse> signInWithEmailPassword(
     String email,
     String password,
@@ -17,7 +17,7 @@ class AuthService {
     return _supabase.auth.signInWithPassword(email: email, password: password);
   }
 
-  // ── Registro email ─────────────────────────────────────────
+  // Registro email
   Future<AuthResponse> signUpWithEmailPassword(
     String email,
     String password,
@@ -25,12 +25,12 @@ class AuthService {
     return _supabase.auth.signUp(email: email, password: password);
   }
 
-  // ── Reset password ─────────────────────────────────────────
+  // Reset password
   Future<void> resetPassword(String email) async {
     await _supabase.auth.resetPasswordForEmail(email);
   }
 
-  // ── Logout ─────────────────────────────────────────────────
+  // Logout
   Future<void> logout() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId != null) {
@@ -40,12 +40,12 @@ class AuthService {
     await _supabase.auth.signOut();
   }
 
-  // ── Email actual ───────────────────────────────────────────
+  // Email actual
   String? getCurrentUserEmail() => _supabase.auth.currentSession?.user.email;
 
-  // ── Login Google ───────────────────────────────────────────
+  // Login Google
   Future<void> signInWithGoogle() async {
-    // ✅ FIX: el redirectTo debe coincidir EXACTAMENTE con lo
+    // FIX: el redirectTo debe coincidir EXACTAMENTE con lo
     // configurado en Supabase → Authentication → URL Configuration
     // Y debe estar registrado en AndroidManifest.xml como intent-filter
     await _supabase.auth.signInWithOAuth(
@@ -55,7 +55,7 @@ class AuthService {
     );
   }
 
-  // ── Biometría ──────────────────────────────────────────────
+  // Biometría
   Future<bool> signInWithBiometrics() async {
     try {
       final canCheck = await _localAuth.canCheckBiometrics;

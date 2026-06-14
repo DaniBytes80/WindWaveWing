@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 
 class WWWWidgets {
-  // ⭐ Campo de texto reutilizable
   static Widget campoTexto({
     required TextEditingController controller,
     required String label,
@@ -34,7 +33,7 @@ class WWWWidgets {
     );
   }
 
-  // ⭐ SnackBar reutilizable (por si lo necesitas en otras pantallas)
+  // SnackBar reutilizable
   static void mostrarSnackBar(
     BuildContext context,
     String mensaje, {

@@ -1,4 +1,5 @@
 class Configuration {
+  // Clase que contiene la configuración de la aplicación
   // Versión de la aplicación
   static String version = '1.0.0';
   // Dirección de la base de datos en Supabase.
