@@ -1,42 +1,103 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('📩 Push en background: ${message.notification?.title}');
+}
 
 class NotificationsService {
   final _messaging = FirebaseMessaging.instance;
   final _supabase = Supabase.instance.client;
 
+  static const _channel = AndroidNotificationChannel(
+    'wwwing_alerts',
+    'Alertas WindWaveWing',
+    description: 'Notificaciones de condiciones meteorológicas',
+    importance: Importance.high,
+  );
+
+  final _localNotifications = FlutterLocalNotificationsPlugin();
+
   Future<void> init(String userId) async {
-    // 1. Pedir permisos
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    print('FCM permisos: ${settings.authorizationStatus}');
+    debugPrint('FCM permisos: ${settings.authorizationStatus}');
 
-    // 2. Obtener token FCM
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(_channel);
+
+    const initSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    );
+    await _localNotifications.initialize(initSettings);
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      final android = message.notification?.android;
+      if (notification != null && android != null) {
+        _localNotifications.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _channel.id,
+              _channel.name,
+              channelDescription: _channel.description,
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+          ),
+        );
+      }
+    });
+
     final token = await _messaging.getToken();
     if (token == null) {
-      print('⚠️ No se pudo obtener token FCM');
+      debugPrint('⚠️ No se pudo obtener token FCM');
       return;
     }
-    print('FCM TOKEN: $token');
+    debugPrint('FCM TOKEN: $token');
 
-    // 3. Guardar en Supabase
-    // ✅ FIX: onConflict por 'user_id' requiere unique constraint.
-    // Usamos upsert por 'token' (que sí tiene unique) y actualizamos user_id.
     try {
-      await _supabase.from('Dispositivos').upsert(
-        {
-          'user_id': userId,
-          'token': token,
-          'fecha_registro': DateTime.now().toIso8601String(),
-        },
-        onConflict: 'token', // ✅ token tiene UNIQUE constraint
-      );
-      print('✅ Token FCM guardado en Supabase');
+      // ✅ FIX: borrar token antiguo del usuario y guardar el nuevo
+      await _supabase.from('Dispositivos').delete().eq('user_id', userId);
+
+      await _supabase.from('Dispositivos').upsert({
+        'user_id': userId,
+        'token': token,
+        'fecha_registro': DateTime.now().toIso8601String(),
+      });
+      debugPrint('✅ Token FCM guardado en Supabase');
     } catch (e) {
-      print('❌ Error guardando token FCM: $e');
+      debugPrint('❌ Error guardando token FCM: $e');
     }
+
+    _messaging.onTokenRefresh.listen((newToken) async {
+      debugPrint('🔄 Token FCM actualizado: $newToken');
+      try {
+        await _supabase.from('Dispositivos').delete().eq('user_id', userId);
+
+        await _supabase.from('Dispositivos').insert({
+          'user_id': userId,
+          'token': newToken,
+          'fecha_registro': DateTime.now().toIso8601String(),
+        });
+      } catch (e) {
+        debugPrint('❌ Error actualizando token: $e');
+      }
+    });
   }
 }

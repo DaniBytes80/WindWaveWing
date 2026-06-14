@@ -32,6 +32,10 @@ class AuthService {
 
   // ── Logout ─────────────────────────────────────────────────
   Future<void> logout() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await _supabase.from('AlertasGeneradas').delete().eq('user_id', userId);
+    }
     await _secure.deleteAll();
     await _supabase.auth.signOut();
   }
