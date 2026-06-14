@@ -1,38 +1,30 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/alerta.dart';
+import '/models/alerta.dart';
+import 'package:tfg_clima_malaga/models/alerta_generada.dart';
 
 class AlertasService {
   final supabase = Supabase.instance.client;
 
   Future<bool> crearAlerta(Map<String, dynamic> data) async {
     try {
-      print("DEBUG crearAlerta data: $data");
-
-      final res = await supabase.from('AlertasUsuario').insert(data);
-
-      print("DEBUG crearAlerta res: $res");
+      await supabase.from('AlertasUsuario').insert(data);
       return true;
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR creando alerta: $e");
-      print("STACK: $st");
       return false;
     }
   }
 
-  // INSERTAR ALERTA (usando modelo Alerta)
   Future<bool> insertarAlerta(Alerta alerta) async {
     try {
-      final res = await supabase.from('AlertasUsuario').insert(alerta.toJson());
-      print("DEBUG insertarAlerta res: $res");
+      await supabase.from('AlertasUsuario').insert(alerta.toJson());
       return true;
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR insertando alerta: $e");
-      print("STACK: $st");
       return false;
     }
   }
 
-  // OBTENER ALERTAS DEL USUARIO
   Future<List<Alerta>> obtenerAlertasUsuario(String userId) async {
     try {
       final data = await supabase
@@ -40,67 +32,49 @@ class AlertasService {
           .select()
           .eq('user_id', userId)
           .order('fecha_creacion', ascending: false);
-
       return data.map<Alerta>((json) => Alerta.fromJson(json)).toList();
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR obteniendo alertas: $e");
-      print("STACK: $st");
       return [];
     }
   }
 
-  // ACTUALIZAR ALERTA
   Future<bool> actualizarAlerta(Alerta alerta) async {
     try {
-      final res = await supabase
+      await supabase
           .from('AlertasUsuario')
           .update(alerta.toJson())
           .eq('id', alerta.id);
-
-      print("DEBUG actualizarAlerta res: $res");
       return true;
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR actualizando alerta: $e");
-      print("STACK: $st");
       return false;
     }
   }
 
-  // BORRAR ALERTA
   Future<bool> borrarAlerta(String alertaId) async {
     try {
-      final res = await supabase
-          .from('AlertasUsuario')
-          .delete()
-          .eq('id', alertaId);
-
-      print("DEBUG borrarAlerta res: $res");
+      await supabase.from('AlertasUsuario').delete().eq('id', alertaId);
       return true;
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR borrando alerta: $e");
-      print("STACK: $st");
       return false;
     }
   }
 
-  // ACTIVAR / DESACTIVAR ALERTA
   Future<bool> cambiarEstadoAlerta(String alertaId, bool activa) async {
     try {
-      final res = await supabase
+      await supabase
           .from('AlertasUsuario')
           .update({'activa': activa})
           .eq('id', alertaId);
-
-      print("DEBUG cambiarEstadoAlerta res: $res");
       return true;
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR cambiando estado alerta: $e");
-      print("STACK: $st");
       return false;
     }
   }
 
-  // OBTENER ALERTAS POR SPOT
   Future<List<Alerta>> obtenerAlertasPorSpot(String spotId) async {
     try {
       final data = await supabase
@@ -108,12 +82,59 @@ class AlertasService {
           .select()
           .eq('spot_id', spotId)
           .eq('activa', true);
-
       return data.map<Alerta>((json) => Alerta.fromJson(json)).toList();
-    } catch (e, st) {
+    } catch (e) {
       print("ERROR obteniendo alertas por spot: $e");
-      print("STACK: $st");
       return [];
+    }
+  }
+
+  // obtener AlertasGeneradas con info del material
+  Future<List<AlertaGenerada>> obtenerAlertasGeneradas(String userId) async {
+    try {
+      final data = await supabase
+          .from('AlertasGeneradas')
+          .select('''
+            id, user_id, spot_id, fecha, mensaje,
+            material_usado,
+            MaterialUsuario (
+              nombre, tipo, medida, disciplina, marca, modelo
+            )
+          ''')
+          .eq('user_id', userId)
+          .order('fecha', ascending: false);
+
+      return data
+          .map<AlertaGenerada>((json) => AlertaGenerada.fromJson(json))
+          .toList();
+    } catch (e) {
+      print("ERROR obteniendo alertas generadas: $e");
+      return [];
+    }
+  }
+
+  Future<bool> borrarAlertaGenerada(String id) async {
+    try {
+      await supabase.from('AlertasGeneradas').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      print("ERROR borrando alerta generada: $e");
+      return false;
+    }
+  }
+
+  Future<bool> borrarAlertasGeneradasDeSpot(
+      String userId, String spotId) async {
+    try {
+      await supabase
+          .from('AlertasGeneradas')
+          .delete()
+          .eq('user_id', userId)
+          .eq('spot_id', spotId);
+      return true;
+    } catch (e) {
+      print("ERROR borrando alertas generadas del spot: $e");
+      return false;
     }
   }
 }

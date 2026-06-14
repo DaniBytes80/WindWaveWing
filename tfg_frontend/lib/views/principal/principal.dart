@@ -158,7 +158,7 @@ class VentanaInicioUsuarioState extends State<VentanaInicioUsuario> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: EstilosWWW.colorBordeTabla.withValues(
-                              alpha: 0.9,
+                              alpha: 0.55,
                             ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(

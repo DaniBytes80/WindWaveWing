@@ -114,7 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
           suffixIcon: IconButton(
             icon: Icon(
               verTexto ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white54,
+              color: EstilosWWW.colorLetra,
             ),
             onPressed: onToggle,
           ),

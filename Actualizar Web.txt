@@ -1,0 +1,9 @@
+Realizar un flutter build web
+Mover de build\web el contenido a la carpeta doc
+Actualizar GitHub:
+git add docs
+git commit -m "Update web version"
+git push
+
+Acceder a la web
+https://danibytes80.github.io/WindWaveWing/
