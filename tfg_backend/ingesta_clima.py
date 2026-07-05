@@ -225,7 +225,13 @@ def obtener_puertos_estado(id_boya, spot_id):
     except Exception as e:
         print(f"    Error registrando: {e}")
 
-
+def _coordenadas(spot):
+    """Extrae (lat, lon) del campo pointjson en formato GeoJSON [lon, lat]."""
+    try:
+        coords = spot["pointjson"]["coordinates"]
+        return float(coords[1]), float(coords[0])
+    except Exception:
+        return None, None
 #  PROCESO PRINCIPAL
 def ingestar_todos_los_spots():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Ingesta de clima...")
