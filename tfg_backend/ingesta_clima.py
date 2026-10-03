@@ -1,15 +1,3 @@
-"""
-ingesta_clima.py
-================
-Estrategia:
-  - Open-Meteo SIEMPRE: 16 días de previsión horaria para todos los spots
-  - Puertos del Estado: complementa con datos reales de boya (últimas horas)
-  - AEMET: pendiente de añadir campo id_aemet en tabla spot
-
-Los datos de boya sobreescriben los de Open-Meteo para las horas recientes
-gracias al upsert con on_conflict="spot_id,fecha_hora".
-"""
-
 import os
 import requests
 from datetime import datetime, timezone, timedelta
@@ -21,99 +9,19 @@ AEMET_API_KEY             = os.getenv("AEMET_API_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-# ─────────────────────────────────────────────────────────────
-#  FCM API V1 — obtener token OAuth2 de la cuenta de servicio
-# ─────────────────────────────────────────────────────────────
-
-def _obtener_access_token():
-    """Obtiene token OAuth2 usando la cuenta de servicio de Firebase."""
+#  UTILIDADES
+def _coordenadas(spot):
+    """Extrae (lat, lon) del campo pointjson."""
     try:
-        import google.auth.transport.requests
-        from google.oauth2 import service_account
-
-        sa_info = json.loads(FIREBASE_SA_JSON)
-        credentials = service_account.Credentials.from_service_account_info(
-            sa_info,
-            scopes=["https://www.googleapis.com/auth/firebase.messaging"],
-        )
-        credentials.refresh(google.auth.transport.requests.Request())
-        return credentials.token
-    except Exception as e:
-        print(f"    ❌ Error obteniendo token OAuth2: {e}")
-        return None
-
-
-def enviar_push(token_dispositivo, titulo, cuerpo, data=None):
-    """Envía notificación push usando FCM API V1."""
-    if not FIREBASE_SA_JSON:
-        print("    ⚠️  FIREBASE_SERVICE_ACCOUNT_JSON no configurado")
-        return False
-
-    access_token = _obtener_access_token()
-    if not access_token:
-        return False
-
-    # Obtener project_id del JSON de la cuenta de servicio
-    sa_info     = json.loads(FIREBASE_SA_JSON)
-    project_id  = sa_info.get("project_id")
-    url         = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
-
-    payload = {
-        "message": {
-            "token": token_dispositivo,
-            "notification": {
-                "title": titulo,
-                "body":  cuerpo,
-            },
-            "android": {
-                "priority": "HIGH",
-                "notification": {"sound": "default"},
-            },
-            "data": {k: str(v) for k, v in (data or {}).items()},
-        }
-    }
-
-    try:
-        r = requests.post(
-            url,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type":  "application/json",
-            },
-            timeout=10,
-        )
-        if r.status_code == 200:
-            print(f"    ✅ Push enviado correctamente")
-            return True
-        else:
-            print(f"    ❌ Error FCM V1: {r.status_code} → {r.text}")
-            return False
-    except Exception as e:
-        print(f"    ❌ Error enviando push: {e}")
-        return False
-
-
-# ─────────────────────────────────────────────────────────────
-#  FUENTE DE DATOS METEOROLÓGICOS
-# ─────────────────────────────────────────────────────────────
-
-def obtener_clima_spot(spot_id):
-    # Prioridad 1: estación propia (futuro)
-    try:
-        hace_15min = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
-        r = supabase.table("mediciones_estacion") \
-            .select("*").eq("spot_id", spot_id) \
-            .gte("fecha_hora", hace_15min) \
-            .order("fecha_hora", desc=True).limit(1).execute()
-        if r.data:
-            print(f"    📡 Estación propia")
-            return r.data[0], "estacion"
+        coords = spot["pointjson"]["coordinates"]
+        # GeoJSON: [longitud, latitud]
+        return float(coords[1]), float(coords[0])
     except Exception:
         return None, None
 
 
 def guardar_clima(rows):
+    """Upsert en lotes de 100 filas."""
     if not rows:
         return 0
     guardadas = 0
@@ -129,14 +37,6 @@ def guardar_clima(rows):
     return guardadas
 
 
-def _valh(h, key, i, default=0.0):
-    try:
-        v = h.get(key, [])[i]
-        return float(v) if v is not None else default
-    except Exception:
-        return default
-
-
 def _val(obj, key, default=0.0):
     try:
         v = obj.get(key)
@@ -144,7 +44,105 @@ def _val(obj, key, default=0.0):
     except Exception:
         return default
 
-#  OPEN-METEO — previsión 16 días (base para todos los spots)
+#  FUENTE 1: PUERTOS DEL ESTADO (boya)
+def obtener_puertos_estado(id_boya, spot_id):
+    """
+    Descarga datos de la boya de Puertos del Estado.
+    API REST pública: https://www.puertos.es/es-es/oceanografia/
+    Devuelve lista de filas o [] si falla.
+    """
+    url = (
+        f"https://portus.puertos.es/portussvr/api/v1/boya"
+        f"/{id_boya}/ultimos"
+    )
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code != 200:
+            return []
+        data = r.json()
+        rows = []
+        for item in data:
+            try:
+                fecha_hora = datetime.fromisoformat(
+                    item.get("fecha", "")).replace(tzinfo=timezone.utc)
+                rows.append({
+                    "spot_id":             spot_id,
+                    "fecha_hora":          fecha_hora.isoformat(),
+                    "velocidad_viento":    _val(item, "viento_velocidad"),
+                    "direccion_viento":    str(item.get("viento_direccion", "0")),
+                    "racha_viento":        _val(item, "viento_racha"),
+                    "altura_ola":          _val(item, "oleaje_altura_significante"),
+                    "periodo_ola":         _val(item, "oleaje_periodo_pico"),
+                    "direccion_ola":       str(item.get("oleaje_direccion", "0")),
+                    "temperatura":         _val(item, "temperatura_agua"),
+                    "humedad":             0.0,
+                    "probabilidad_lluvia": 0.0,
+                })
+            except Exception:
+                continue
+        return rows
+    except Exception as e:
+        print(f" Puertos del Estado error: {e}")
+        return []
+
+#  FUENTE 2: AEMET
+def obtener_aemet(id_aemet, spot_id):
+    """
+    Descarga predicción horaria de AEMET para un municipio.
+    id_aemet: código INE del municipio (ej: "29067" para Málaga)
+    """
+    if not AEMET_API_KEY or not id_aemet:
+        return []
+    url = (
+        f"https://opendata.aemet.es/opendata/api/prediccion/especifica"
+        f"/municipio/horaria/{id_aemet}"
+    )
+    try:
+        r = requests.get(url,
+            headers={"api_key": AEMET_API_KEY}, timeout=10)
+        if r.status_code != 200:
+            return []
+        datos_url = r.json().get("datos")
+        if not datos_url:
+            return []
+        r2 = requests.get(datos_url, timeout=10)
+        if r2.status_code != 200:
+            return []
+        prediccion = r2.json()
+        rows = []
+        for dia in prediccion[0]["prediccion"]["dia"]:
+            fecha_base = datetime.strptime(
+                dia["fecha"], "%Y-%m-%dT%H:%M:%S").replace(
+                tzinfo=timezone.utc)
+            # Viento horario
+            vientos = {int(v["periodo"]): v for v in dia.get("vientoAndRachaMax", [])}
+            # Temperatura horaria
+            temps   = {int(t["periodo"]): float(t["value"]) for t in dia.get("temperatura", [])}
+            # Lluvia horaria
+            lluvias = {int(p["periodo"]): float(p["value"]) for p in dia.get("probPrecipitacion", [])}
+
+            for hora in range(24):
+                fecha_hora = fecha_base.replace(hour=hora)
+                v = vientos.get(hora, {})
+                rows.append({
+                    "spot_id":             spot_id,
+                    "fecha_hora":          fecha_hora.isoformat(),
+                    "velocidad_viento":    float(v.get("velocidad", 0) or 0) * 0.539957,  # km/h → kn
+                    "direccion_viento":    str(v.get("direccion", "0")),
+                    "racha_viento":        float(v.get("value", 0) or 0) * 0.539957,
+                    "altura_ola":          0.0,  # AEMET no da olas
+                    "periodo_ola":         0.0,
+                    "direccion_ola":       "0",
+                    "temperatura":         temps.get(hora, 0.0),
+                    "humedad":             0.0,
+                    "probabilidad_lluvia": lluvias.get(hora, 0.0),
+                })
+        return rows
+    except Exception as e:
+        print(f" AEMET error: {e}")
+        return []
+
+#  FUENTE 3: OPEN-METEO
 def obtener_openmeteo(lat, lon, spot_id, forecast_days=16):
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -168,7 +166,8 @@ def obtener_openmeteo(lat, lon, spot_id, forecast_days=16):
     try:
         r = requests.get(url, params=params, timeout=15)
         r.raise_for_status()
-        h    = r.json().get("hourly", {})
+        data = r.json()
+        h    = data.get("hourly", {})
         rows = []
         for i, t in enumerate(h.get("time", [])):
             try:
@@ -194,37 +193,13 @@ def obtener_openmeteo(lat, lon, spot_id, forecast_days=16):
         print(f" Open-Meteo error: {e}")
         return []
 
-#  PUERTOS DEL ESTADO — datos reales de boya (últimas horas)
-def obtener_puertos_estado(id_boya, spot_id):
-    url = f"https://portus.puertos.es/portussvr/api/v1/boya/{id_boya}/ultimos"
-    try:
-        r = requests.get(url, timeout=10)
-        if r.status_code != 200:
-            return []
-        rows = []
-        for item in r.json():
-            try:
-                fecha_hora = datetime.fromisoformat(
-                    item.get("fecha", "")).replace(tzinfo=timezone.utc)
-                rows.append({
-                    "spot_id":             spot_id,
-                    "fecha_hora":          fecha_hora.isoformat(),
-                    "velocidad_viento":    _val(item, "viento_velocidad"),
-                    "direccion_viento":    str(item.get("viento_direccion", "0")),
-                    "racha_viento":        _val(item, "viento_racha"),
-                    "altura_ola":          _val(item, "oleaje_altura_significante"),
-                    "periodo_ola":         _val(item, "oleaje_periodo_pico"),
-                    "direccion_ola":       str(item.get("oleaje_direccion", "0")),
-                    "temperatura":         _val(item, "temperatura_agua"),
-                    "humedad":             0.0,
-                    "probabilidad_lluvia": 0.0,
-                })
-            except Exception:
-                continue
-        return rows
-    except Exception as e:
-        print(f"    Error registrando: {e}")
 
+def _valh(h, key, i, default=0.0):
+    try:
+        v = h.get(key, [])[i]
+        return float(v) if v is not None else default
+    except Exception:
+        return default
 
 #  PROCESO PRINCIPAL
 def ingestar_todos_los_spots():
@@ -253,28 +228,32 @@ def ingestar_todos_los_spots():
             continue
 
         print(f" {nombre} ({lat:.4f}, {lon:.4f})")
-        total_spot = 0
+        rows = []
+        fuente = ""
 
-        # PASO 1: Open-Meteo siempre
-        rows_om = obtener_openmeteo(lat, lon, spot_id, forecast_days=16)
-        if rows_om:
-            g = guardar_clima(rows_om)
-            total_spot += g
-            print(f" Open-Meteo: {g} filas (16 días)")
-        else:
-            print(f" Open-Meteo sin datos")
-
-        # PASO 2: Boya Puertos del Estado
+        # Prioridad 1: Puertos del Estado 
         if id_boya:
-            rows_boya = obtener_puertos_estado(id_boya, spot_id)
-            if rows_boya:
-                g = guardar_clima(rows_boya)
-                total_spot += g
-                print(f" Boya {id_boya}: {g} filas (datos reales)")
-            else:
-                print(f" Boya {id_boya}: sin datos")
+            rows  = obtener_puertos_estado(id_boya, spot_id)
+            fuente = f"Puertos del Estado (boya {id_boya})"
 
-        total += total_spot
+        # Prioridad 2: AEMET (si no hay boya) 
+        if not rows and AEMET_API_KEY:
+            es_espana = -18 <= lon <= 5 and 27 <= lat <= 44
+            if es_espana:
+                pass
+
+        # Prioridad 3: Open-Meteo 
+        if not rows:
+            rows   = obtener_openmeteo(lat, lon, spot_id, forecast_days=16)
+            fuente = "Open-Meteo (16 días)"
+
+        if not rows:
+            print(f" Sin datos de ninguna fuente")
+            continue
+
+        guardadas = guardar_clima(rows)
+        print(f" {guardadas} filas · {fuente}")
+        total += guardadas
 
     print(f"\n Completado. Total: {total} filas")
 

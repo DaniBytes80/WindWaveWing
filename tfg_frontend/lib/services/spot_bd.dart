@@ -39,11 +39,20 @@ class SpotBd {
   /// Método que SpotManager espera
   Future<List<Map<String, dynamic>>> getClimaPorSpot(String spotId) async {
     try {
+      // ✅ FIX: filtrar desde hace 1h para no traer todo el historial
+      // Málaga y otros spots españoles acumulan miles de filas desde mayo
+      // Supabase tiene límite de 1000 filas por defecto → truncaba la respuesta
+      final desde = DateTime.now().toUtc()
+          .subtract(const Duration(hours: 1))
+          .toIso8601String();
+
       final response = await _supabase
           .from('clima')
           .select('*')
           .eq('spot_id', spotId)
-          .order('fecha_hora');
+          .gte('fecha_hora', desde)   // ← solo datos recientes y futuros
+          .order('fecha_hora')
+          .limit(400);               // ← 16 días × 24h + margen
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
