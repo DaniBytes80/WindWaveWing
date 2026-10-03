@@ -10,7 +10,7 @@ import 'package:app_links/app_links.dart';
 
 import 'package:tfg_clima_malaga/services/spot_manager.dart';
 import 'package:tfg_clima_malaga/services/user_manager.dart';
-import 'package:tfg_clima_malaga/services/notifications_service.dart';
+import 'package:tfg_clima_malaga/services/notifications_service.dart' show NotificationsService;
 import 'package:tfg_clima_malaga/views/principal/principal.dart';
 import 'package:tfg_clima_malaga/utils/tema.dart';
 import 'configuration.dart';
